@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Posts on Knut&#39;s Blog</title>
+    <link>/post/</link>
+    <description>Recent content in Posts on Knut&#39;s Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sat, 11 Aug 2018 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="/post/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Using Customer Identity Embeddings (Customer2Vec) to predict Telemarketing success in Banking</title>
+      <link>/2018/08/using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking/</link>
+      <pubDate>Sat, 11 Aug 2018 00:00:00 +0000</pubDate>
+      
+      <guid>/2018/08/using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking/</guid>
+      <description>The why Well the why of this blog:
+- exercising data science
+- developing new concepts for data products
+- trying out applications for customer analytics (or, say stakeholder analytics), market research and seo / content marketing
+The why of this post:
+- Trying out customer2vec
+- Playing around with R blogdown
+- Exercise general predictive analytics workflow
+Let’s use the reknown case about predicting effectiveness of a direct marketing intervention of a bank from the UCI ML repository (find it here: https://archive.</description>
+    </item>
+    
+  </channel>
+</rss>

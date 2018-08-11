@@ -1,0 +1,1245 @@
+---
+title: "Using Customer Identity Embeddings (Customer2Vec) to predict Telemarketing success in Banking"
+author: "Knut Jägersberg"
+date: '2018-08-11'
+categories: ["Data mining"]
+tags: ["Toydataset"]
+output:
+  html_document:
+    toc: true
+    toc_depth: 4
+---
+
+```{r, echo=F}
+#plot crips-dm
+grid::grid.raster(png::readPNG("data/customer2vec.png"))
+```
+
+
+
+# The why
+Well the why of this blog:  
+- exercising data science  
+- developing new concepts for data products  
+- trying out applications for customer analytics (or, say stakeholder analytics), market research and seo / content marketing  
+
+The why of this post:  
+- Trying out customer2vec  
+- Playing around with R blogdown  
+- Exercise general predictive analytics workflow  
+
+
+
+Let's use the reknown case about predicting effectiveness of a direct marketing intervention of a bank from the UCI ML repository (find it here: https://archive.ics.uci.edu/ml/datasets/bank+marketing). Let's walk through the usual steps of the cross industry standard data mining process (CRISP-DM), meaning  
+1. business understanding,  
+2. data understanding, 
+3. EDA & feature engineering (fun part)  
+4. as well as the technical exercise of modeling and evaluation. 
+In principle, stuff like this could also done on kaggle, but since I did not hear about the concept of customer2vec anywhere  else, I rather post it here as my own content.  
+
+
+For deployment, I will likely write an extra post. 
+
+
+```{r, echo=F}
+#plot crips-dm
+grid::grid.raster(jpeg::readJPEG("data/crisp-dm.jpg"))
+
+```
+
+
+# CRISP-DM Phases
+## Business understanding
+
+The problem we will look at is about a bank institution trying to sell a term deposit to their customers. A telemarketing campaign was done to sell the product by phone calling the banks customers.  
+Of course, the bank has created a database about their customers and we would like to help the bank to assess, which other customers are interesting prospects for the campaign. The problem is a binary classification problem, meaning that the target variable says if calling the customer has inspired them to subscribe to the term deposit.  
+In general, we also want to learn more about the type of customers, who are likely to subscribe, so that the telemarketeers can adjust their communications based on our customer insights. 
+
+
+## Data understanding & Data Preparation
+Let's have a look at the dataset to understand what kind of data we have available for the task. 
+
+```{r}
+#download the dataset
+
+url = "https://archive.ics.uci.edu/ml/machine-learning-databases/00222/bank-additional.zip"
+#download.file(url, "bank-additional.zip")
+#unzip("bank-additional.zip", exdir = "data")
+#file.remove("bank-additional.zip")
+
+# check out the contents of the archive
+list.files("data/bank-additional")
+
+
+```
+
+
+For this fun exercise, we use the extended dataset with more variables (bank-additional). According to the documentation, the complete dataset is found in the full file, and the names file describes the meaning of the variables. Let's take a look at both of them.  
+
+Luckily, detailed information about the meaning of the variables is available in the documentation. In practice this is of course often not the case. Here is what it says about the variables:  
+
+   Input variables:  
+   # bank client data:  
+   1 - age (numeric)  
+   2 - job : type of job (categorical: "admin.","blue-collar","entrepreneur","housemaid","management","retired","self-employed","services","student","technician","unemployed","unknown")  
+   3 - marital : marital status (categorical: "divorced","married","single","unknown"; note: "divorced" means divorced or widowed)  
+   4 - education (categorical: "basic.4y","basic.6y","basic.9y","high.school","illiterate","professional.course","university.degree","unknown")  
+   5 - default: has credit in default? (categorical: "no","yes","unknown")  
+   6 - housing: has housing loan? (categorical: "no","yes","unknown")  
+   7 - loan: has personal loan? (categorical: "no","yes","unknown")  
+   # related with the last contact of the current campaign:
+   8 - contact: contact communication type (categorical: "cellular","telephone")   
+   9 - month: last contact month of year (categorical: "jan", "feb", "mar", ..., "nov", "dec")  
+  10 - day_of_week: last contact day of the week (categorical: "mon","tue","wed","thu","fri")  
+  11 - duration: last contact duration, in seconds (numeric). Important note:  this attribute highly affects the output target (e.g., if duration=0 then y="no"). Yet, the duration is not known before a call is performed. Also, after the end of the call y is obviously known. Thus, this input should only be included for benchmark purposes and should be discarded if the intention is to have a realistic predictive model.  
+   # other attributes:  
+  12 - campaign: number of contacts performed during this campaign and for this client (numeric, includes last contact)  
+  13 - pdays: number of days that passed by after the client was last contacted from a previous campaign (numeric; 999 means client was not previously contacted)  
+  14 - previous: number of contacts performed before this campaign and for this client (numeric)  
+  15 - poutcome: outcome of the previous marketing campaign (categorical: "failure","nonexistent","success")  
+   # social and economic context attributes  
+  16 - emp.var.rate: employment variation rate - quarterly indicator (numeric)  
+  17 - cons.price.idx: consumer price index - monthly indicator (numeric)  
+  18 - cons.conf.idx: consumer confidence index - monthly indicator (numeric)       
+  19 - euribor3m: euribor 3 month rate - daily indicator (numeric)  
+  20 - nr.employed: number of employees - quarterly indicator (numeric)  
+
+  Output variable (desired target):  
+  21 - y - has the client subscribed a term deposit? (binary: "yes","no")  
+
+8. Missing Attribute Values: There are several missing values in some categorical attributes, all coded with the "unknown" label.  
+
+
+### A look at the dataset
+We take a couple of notes about the dataset using this information. Of course, we will also look at the data itself to identify potential data cleaning tasks.  
+
+- there are several variables (like call duration), which directly come about from prior contact and should better only be used for exlorative aims: Our intention is to use the model on both customers with and without prior contact  
+- number of days since previous call have a special value of 999 to indicate that the variable is not applicable (no previous call)  
+- missing values have the label "unknown". It is possible that some of them indicate buying the product or not  
+
+
+Now let's take a look at (a sample of) the dataset itself, before we check a couple of summary statistics:  
+
+```{r}
+library(magrittr)
+#look at the dataset
+
+
+dataset<-data.table::fread("data/bank-additional/bank-additional-full.csv", stringsAsFactors=T)
+
+dataset[dataset=="unknown"]<-NA
+
+widgetframe::frameWidget(
+  DT::datatable(dplyr::sample_n(dataset, 1000), extensions = 'FixedColumns',
+  options = list(
+  scrollX = TRUE,
+  scrollCollapse = T
+)), height = 600)
+```
+
+
+We see that there are a lot of categorical variables present in our dataset. Let's check if all datatypes are correctly assigned:  
+
+```{r}
+library(htmlTable)
+htmlTable(data.frame(datatype=sapply(dataset, class)))
+```
+For now, this looks ok. We will likely make some changes during feature engineering. 
+We can see that most features are categorical (in R categoricals are called factor variables).  
+
+### Checking data quality & exploratory data analysis
+Let's continue  with some descriptive statistics to check if their are obvious problems with data quality. We also let take a look at the distribution of the variables.  
+
+If you would like to learn more about assessing data quality, I can recommend the classic book "Exploratory Data Mining & Data Cleaning" by Dasu & Johnson (see https://books.google.de/books/about/Exploratory_Data_Mining_and_Data_Cleanin.html?id=2OWJVkevamQC&redir_esc=y). Although data science is a relatively recent term, quite a lot's of its concepts have been explored during the 90s by pioneering data miners working with the first large databases of usually large corporations.  
+Are their any suspicious missing values indicating data glitches?  
+Are there any extreme values, which are off the limits, when we take measures of spread as an error bound?  
+
+
+
+```{r}
+# check summary statistics, missing value patterns etc
+summary_stats<-dplyr::select(autoEDA::dataOverview(dataset), Feature, LowerOutliers:UpperOutlierValue, Observations:ZeroSpreadFeature)
+
+widgetframe::frameWidget(DT::datatable(summary_stats, extensions = 'FixedColumns',
+  options = list(
+  #dom = 't',
+  scrollX = TRUE,
+  scrollCollapse = T, pageLength = 10, lengthMenu = c(5, 10, 15)
+)), height = 600)#, number_of_entries = c(25), width = 200))
+
+
+
+#check out the standard deviation as well
+sapply(dataset[,as.logical(sapply(dataset, class)!="factor"), with=F], sd)
+
+
+```
+
+In aboves table, the Turkey method for detecting outliers (everything above  1.5 interquartile range is suspicious) is used to indicate outliers.  
+
+```{r}
+
+d<-autoEDA::autoEDA(dataset, removeConstant = F, removeZeroSpread = F, removeMajorityMissing = F, clipOutliers = F, rotateLabels = F)
+
+```
+
+
+
+
+
+
+
+
+- campaign: number of contacts done during this campaign, in some people have been contacted lots of times. More often than 6 times are suspected to be outliers, according to both interquartile range indicator as well as usual spread measures. We will create a categorical variable from it, anything more than 5 days becomes a rest bucket.  
+
+```{r}
+#recode campaign variable
+dataset$campaign<-cut(dataset$campaign, breaks = c(0:6, max(dataset$campaign)), ordered_result = T)
+
+```
+
+
+- pdays: number of days past since contact from a previous campaign, the 999 indicator means there has been no previous contact. Again a categorical variable may help. Below, we see the frequency of the days gone by. We see that we can bin the data are at 0-2, 3-4, 5-7, longer than a week, not at all.  
+
+```{r}
+
+plotly::ggplotly(plotluck::plotluck(dataset[dataset$pdays<999], y~pdays))
+
+#print out frequencies
+table(dataset$pdays)
+
+#recode pdays variable
+dataset$pdays<-cut(dataset$pdays, breaks = c(-1,2, 4, 7, max(dataset$pdays[dataset$pdays!=999]), 999), ordered_result = F)
+
+```
+
+
+- previous: number of contacts before the campaign. Usually customers have not been contacted before, according to the counts from aboves plotting. We can instead simplify it and create another categorical indicating contact or not contacted.  
+
+```{r}
+#recode pdays variable
+dataset$previous<-cut(dataset$previous, breaks = c(-1,0,max(dataset$previous)), ordered_result = F)
+
+
+```
+
+
+- number of credit defaults: has relatively lots of missing values. These may be suspicious / interesting in itself (reporting an existing default may not be desirable from the customers point of view, they should be less likely to buy the product). This potential identifier is corroborated by belows mosaic plot, default status unkown shows much less buyers than the status no default:  
+
+
+
+```{r}
+dataset$default[is.na(dataset$default)]<-"unknown"
+
+plotly::ggplotly(plotluck::plotluck(dataset, y~default))
+```
+
+
+
+
+- duration: in some cases, the call took extraordinarily long, instead of a couple of minutes, it took 30 minutes. We get curious about cases taking longer than say 8 minutes. Also talks taking only a couple of seconds, say less than 10 seconds, are interesting. Both may be decoupled cases, where the phone call alone maybe most important (we do not know the duration & call quality in advance).  
+
+```{r}
+
+# first print summary stats of too long talks
+summary(dataset[dataset$duration>60*8,])
+
+#then of shorter talks
+summary(dataset[dataset$duration<=60*8,])
+```
+
+Here it is striking that for very long phone calls, the proportion of buyers rises appears to rise sharply whilst other variables look the same, so the longer talk alone may be an important reason for buying.  
+To look at this, we bin the duration variable and look at how the proportion of buyers tends to increase as the talk takes longer:  
+
+
+```{r}
+
+## bin variables
+
+dataset$bins<-cut(dataset$duration, breaks = 10, ordered_result = T)
+
+plotly::ggplotly(plotluck::plotluck(dataset, y~bins))
+
+paste(nrow(dataset[dataset$duration>600,]), "records are above the threshold")
+
+```
+
+Here we see that the probability of buying increases sharply after roundabout talk durations of roundabout 500 seconds. 
+
+
+Let's take a look at another indicator, for this we use the isolationForest algorithm. This algorithm takes samples of the data, selects a random feature and then randomly splits the data recursively, until each observation in the sample is isolated. Anomalies tend to be isolated with less splits, which helps to indicate outliers.  
+We then take the average number of splits for each observation and look at the lowest p percentile for potential outliers. 
+Below, we use dimensionality reduction (t-sne) on (a sample of) the dataset (excluding the target variable and default, both are kind of special) to plot the potential outliers. 
+We then visually inspect if these outliers in fact are distant to the rest of the data:
+
+```{r}
+#first predict the probability to buy using a random forest probability model
+dataset_check<-imputeMissings::impute(dataset)
+isolation_forest<-isofor::iForest(dataset_check, multicore = T, nt = 128)
+p = predict(isolation_forest, dataset_check)
+col = ifelse(p > quantile(p, 0.98), "outlier", "ok")
+
+
+tsne_m<-as.matrix(sapply(dummy::dummy(dplyr::select(dataset_check, -y, -default)), as.numeric))
+ids<-sample(1:nrow(dataset), 1000)
+colours = ifelse(p > quantile(p, 0.98), "red", "blue")
+ids_colours<-data.frame(colours)
+ids_red<-which(ids_colours$colours=="red")
+ids_red_sample<-sample(ids_red, 100)
+
+ids<-unique(c(ids,ids_red_sample))
+tsne_m<-tsne_m[ids,]
+dataset_tsne<-tsne::tsne(tsne_m)
+
+#reload previous results
+load("/home/knut/Documents/blog-tranq/content/post/data/isofor_results.Rdata")
+
+colours<-colours[ids]
+plot(dataset_tsne[,1], dataset_tsne[,2], col=colours, pch=colours)
+
+
+
+```
+
+These records tend to be in a slightly less concentrated area of the  records, not really far of. They are more extreme values not strictly speaking outliers. 
+Now we want to know, if and how these more extreme records differ from the rest. 
+So we do a little EDA on this subset, to better understand these records.  
+
+We observe, that:  
+- they are proportionally seen more frequently retired then people from the overall dataset   
+- The age distribution also contains more elderly people  
+- The outcome of previous marketing campaigns is much more likely to be a success
+- They are more likely to subscribe to the deposit (remarkably, since this variable was excluded from training isolation forest)  
+
+
+
+Below two times the distributions for those marked as potential outliers and those who are not marked as outliers:  
+
+Outliers:  
+
+
+```{r}
+
+
+
+look_df<-dataset_check[col=="outlier",]
+
+d<-autoEDA::autoEDA(look_df, removeConstant = F, removeZeroSpread = F, removeMajorityMissing = F, clipOutliers = F, rotateLabels = F)
+
+
+
+```
+
+Non-Outliers:  
+
+```{r}
+look_df<-dataset_check[col=="ok",]
+
+
+d<-autoEDA::autoEDA(look_df, removeConstant = F, removeZeroSpread = F, removeMajorityMissing = F, clipOutliers = F, rotateLabels = F)
+
+```
+
+
+
+What about administratively employed ones? Are there any stricking differences for those?  
+
+It appears, that the previous campaign was also more likely to be a success and they are also older than usual:  
+
+
+Outliers:  
+
+```{r}
+look_df<-dataset_check[col=="outlier",]
+
+d<-autoEDA::autoEDA(look_df[look_df$job=="admin.",], removeConstant = F, removeZeroSpread = F, removeMajorityMissing = F, clipOutliers = F, rotateLabels = F)
+```
+
+Non-outliers:  
+
+```{r}
+look_df<-dataset_check[col=="ok",]
+
+d<-autoEDA::autoEDA(look_df[look_df$job=="admin.",], removeConstant = F, removeZeroSpread = F, removeMajorityMissing = F, clipOutliers = F, rotateLabels = F)
+```
+
+
+Overall, these more extreme records are interesting cases showing some interesting prospects for the telemarketing campaign, because they are may be likely to have relatively large amounts of savings to deposit, but they do not qualify as real outliers. 
+
+
+
+However, we saw a few records with extraordinary long duration.  
+We now explore outlier thresholds by looking at the relation of duration & education:  
+```{r}
+ggplot(dataset, aes(y=duration, x=as.factor(education))) + geom_violin(stat="ydensity", position="dodge", alpha=1, trim=TRUE, scale="area") + geom_boxplot(stat="boxplot", position="dodge", alpha=1, width=0.2) + theme_bw() + theme(text=element_text(family="sans", face="plain", color="#000000", size=15, hjust=0.5, vjust=0.5)) + xlab("job") + ylab("duration")
+
+
+```
+Based on this plot, we take durations longer than 2500 seconds as clear outliers. 
+
+
+Below we see several conditional outliers, people who are retired and very young are rare, as well as individuals with jobs in a very high age. We take retired people younger than 35 as outliers and non-retired people older than 75 years as outliers. 
+
+
+
+
+```{r}
+
+ggplot(dataset_check, aes(y=age, x=as.factor(job))) + geom_boxplot(aes(fill=as.factor(job)), stat="boxplot", position="dodge", alpha=1, width=0.2) + theme_bw() + theme(text=element_text(family="sans", face="plain", color="#000000", size=15, hjust=0.5, vjust=0.5), axis.text.x=element_text(angle = 90, vjust = 0.05)) + guides(fill=guide_legend(title="job")) + xlab("job") + ylab("age")+coord_flip()
+
+
+
+```
+
+
+
+Now lets exclude these outliers from further analysis:
+
+
+```{r}
+#Exclude outliers  according to duration
+dataset<-dataset[dataset$duration<2500,]
+dataset<-dataset[(dataset$job=="retired" & dataset$age<=35)==F,]
+dataset<-dataset[(dataset$job!="retired" & dataset$age>=75)==F,]
+
+```
+
+
+
+Now lets deal with the missing values.  
+Below a figure about percentage missing:  
+
+
+```{r}
+DataExplorer::plot_missing(dataset)
+```
+
+There are not that many missing values.  
+The approach here is model based, using random forests. For each variable, random forests are fit & used to predict the missing values, until a user specified number of ieterations is reached or until estimated imputation error increases.  
+
+
+```{r}
+set.seed(43)
+#get rid of unneded unknown factor levels
+dataset<-droplevels(dataset)
+
+#we wont use the duration variable as it is unknown during prediction
+
+dataset<-dplyr::select(dataset, -duration, -bins)
+
+#takes some time so reload earlier results
+# dataset_rf_imp<-missRanger::missRanger(dataset, num.trees=500, verbose = 2)
+
+load("/home/knut/Documents/blog-tranq/content/post/data/rf_imp.Rdata")
+
+dataset<-dataset_rf_imp
+```
+
+
+
+### Advanced exploratory data analysis & feature engineering
+
+Now that we have a cleaned up dataset, we want to see if we can create more effective features by learning more about the data.  
+Again, random forests can help us to spot the most interesting patterns in the data. 
+Below we calculate the variable importance in a random forest model to spot most important predictors:  
+
+```{r}
+rf_importances<-ranger::ranger(dependent.variable.name = "y", data = dataset, importance = "permutation", num.trees = 128)
+
+variable_importances<-data.frame(permutation_importance=rf_importances$variable.importance)
+variable_importances$variable<-rownames(variable_importances)
+variable_importances<-dplyr::arrange(variable_importances, desc(permutation_importance))
+
+#plot the variable importance
+plotluck::plotluck(variable_importances, permutation_importance~variable)
+```
+
+As we can see, the newly added social and economic context variables are very important. The euribor interest rate of banks lending money to each other is likely to influence the interest the customer can recieve when buying the  bank product / the term deposit, as do the consumer price index and employment rate.  
+These variables both mean welfare of the individual (having the money for the term deposit) & good economic conditions.  
+
+This let's us suspect, that some variables tied to individual socio-economic status (job, marital, education, housing loan, personal loan, age) can be used in combination to more clearly indicate wealth or non wealth. If we segment / cluster these datapoints into groups, we might find individuals being part of higher or lower socio-economic classes. Let's try it out.  
+An easy way to do this is to create an extra label for groups of higher and lower socio economic status.  Also we  remember, that we found extreme values for retired people and older people with administrative jobs. So we give those a special code, too, they are the easy targets. The relation is corroborated by belows plot:  
+
+
+```{r}
+
+dataset$socio_eco<-"unknown"
+dataset[dataset$job%in%c("student", "unemployed", "self-employed", "services"),"socio_eco"]<-"disadvantaged"
+dataset[dataset$age>=30&dataset$job%in%c("blue-collar", "technician", "entrepreneur", "management"),"socio_eco"]<-"advantaged"
+dataset[dataset$job%in%c("housemaid", "unemployed", "services"),"socio_eco"]<-"disadvantaged"
+dataset[dataset$age>=30&dataset$education%in%c("professional.course", "university.degree", "high.school")==F,"socio_eco"]<-"disadvantaged"
+dataset$socio_eco<-as.factor(dataset$socio_eco)
+
+
+dataset$older_prospects<-"rest"
+dataset[dataset$job=="retired"&dataset$poutcome=="success" & dataset$age>=40,"older_prospects"]<-"easy_target"
+dataset[dataset$job=="admin."&dataset$poutcome=="success" & dataset$age>=40,"older_prospects"]<-"easy_target"
+
+dataset$older_prospects<-as.factor(dataset$older_prospects)
+
+plotluck::plotluck(dataset, y~older_prospects)
+
+
+
+```
+
+Next to making up a segmentation ourselves, we also want to use a data-driven approach. We would like to cluster the data according to these demographic variables about the bank client, to segment the customers into similar groups. The number of available variables for customer segmentation is limited, so this will be mostly just for fun and to improve the  algorithm by finding  bigger patterns.  
+There are several approaches towards this, one including one-hot encoding and then using distance measures as input for standard cluster algorithms like k-means. But that would be boring.  
+
+#### Customer2Vec
+Here we want to try out something else: Clustering based on "customer identity embeddings". We use all the categorical data from the bank client (and making the age variable categorical by binning into  5 year groups as well) as input for the word2vec algorithm. This  algorithm is usually used to compute meaning representing numerical vectors of documents (doc2vec) or word semantics (word2vec) by predicting word context with a neural network (everyone knows the qoute: "You shall know a word by the company it keeps"). Instead, we use all categorical data to artificially create a text variable containing the categories, train a doc2vec  using the customer records as document cases and then compute the clusters based on this bank client identity reflecting data: Customer identities are described by typical demographics. Just like words, customer identity can be seen as embedded in their socio-economic, demographic and psychographic contexts. Customer2vec tries to predict the personal markup context variables sourrounding each other (skipgram model) and maps identity onto a vector space.  
+Example: The model sees a customer is of age 25 and tries predict occupation, if she has a housing loan etc. It also tries to predict the age and if she has a housing loan based on occupation.  Then the final layer of the neural network is cut off and the raw vectors before the final predicting transformation is extracted:  
+
+```{r, echo=F}
+grid::grid.raster(png::readPNG("data/customer2vec.png"))
+```
+
+
+
+We use those to infer a couple of the customer identities / personas underlying dimensions automatically and use the customer2vec as input for a clustering algorithm.  
+Finallly, to interpret these clusters, we fit both usual decision trees as well as conditional inference trees (which avoid the variable selection bias of normal trees towards categories with lots of values, using permutation tests instead of impurity measures). These help us to describe what kind of people are found in the groups.  
+
+
+```{r}
+#select customer identity related columns
+socio_economic_vars<-dplyr::select(dataset, job, marital, education, loan, housing)
+socio_economic_vars$age<-cut(dataset$age, seq(from = 0, to = 100, by=5))
+socio_economic_vars<-as.data.frame(socio_economic_vars)
+
+#unite colnames and factor levels
+for (i in 1:ncol(socio_economic_vars)){
+  socio_economic_vars[,i]<-as.factor(paste(colnames(socio_economic_vars)[i], socio_economic_vars[,i], sep = "_"))
+  
+}
+
+socio_economic_vars_embeddings<-tidyr::unite(socio_economic_vars, all, job:age, sep=" ")
+
+
+# create file for word2vec
+# add document / customer id tokens
+texts <- as.character(paste0("禪", 1:nrow(socio_economic_vars_embeddings), " ", socio_economic_vars_embeddings$all))
+tmp_file_txt <- tempfile()
+tmp_file_model <- tempfile()
+writeLines(text = texts, con = tmp_file_txt)
+
+#train customer identity embeddings (takes some time so reload earlier results)
+# model = wordVectors::train_word2vec(tmp_file_txt, paste0(tmp_file_model, "clean.bin"), vectors=10,threads=4,window=50,iter=80, negative_samples=0, min_count = 1, force = T, cbow = 0)
+
+
+load("/home/knut/Documents/blog-tranq/content/post/data/customer2vec.Rdata")
+#extract customer identity vectors & demographics vectors (like doc2vec)
+customer_identity_vectors<-model[stringr::str_detect(rownames(model), "禪.*"),]
+demographics_vectors<-model[stringr::str_detect(rownames(model), "禪.*")==F,]
+
+
+# as an example we print out the first demographic token vectors
+demographics_vectors
+
+```
+
+#### Finding a good k for Customer Segmentation
+So now we have calculated our customer identity vectors and want to use them to identify meaningful structure about who the banks customers are. We will use the well-known elbow method to determine the number of  clusters. For this we look at the total within-clusters sum of square (a measure how little the variation is within all clusters) and seek an elbow in the plot (this balances how alike the records are per cluster vs. how many clusters are needed to minimize the intra cluster variation). Below we see the elbow is at a k of 3. 
+
+```{r}
+# Compute and plot wss for k = 2 to k = 15
+k.max <- 15 # Maximal number of clusters
+data <- customer_identity_vectors
+wss <- sapply(1:k.max, 
+        function(k){kmeans(data, k, nstart=10 )$tot.withinss})
+
+plot(1:k.max, wss,
+       type="b", pch = 19, frame = FALSE, 
+       xlab="Number of clusters K",
+       ylab="Total within-clusters sum of squares")
+abline(v = 3, lty =2)
+```
+
+This is also corroborated when we look at (a sample) of the data itself.  
+Below we have a two dimensional projection of the customer identity embeddings, one can see that to the left and the  right and somewhere in the  middle, the datapoints (here just the rownames from the customer embeddings) are more dense. We could also opt for say 4 or 5 clusters, but to keep things simple we go for 3.  
+
+
+
+```{r}
+
+clusters<-kmeans(customer_identity_vectors, 3)
+
+#sample data to plot clusters in overview
+
+sample_nrs<-sample(1:nrow(customer_identity_vectors), 300)
+
+
+load("/home/knut/Documents/blog-tranq/content/post/data/clusters.Rdata")
+
+#something goes wrong  rendering this plot, so I use a picture  of it instead
+#cluster::clusplot(main="Two dimensional reduction of k-means clustering with k=3 using PCA", customer_identity_vectors[sample_nrs,], clusters$cluster[sample_nrs], color=TRUE, shade=TRUE,labels=2, lines=0)
+
+
+
+
+```
+
+```{r, echo=F}
+
+grid::grid.raster(png::readPNG("data/clusterplot.png"))
+```
+
+
+
+
+
+#### Decision trees & categorical demographic similarities for cluster interpretation
+Now that we have three customer segments, we would like to learn about their identity. To  do so, we fit two decision tree models to take a look at the most important differentiators for these three clusters. Note that in belows tree, some of the category levels had to be abbreviated. bsc stands for basic school, not a bachelors degree.  
+
+```{r}
+
+#create dataframe for decision trees with original demographic variables
+socio_economic_vars_cl<-dplyr::bind_cols(socio_economic_vars, data.frame(clusters=factor(clusters$cluster)))
+
+#fit and plot decision trees
+decision_tree<-rpart::rpart(clusters~., data = socio_economic_vars_cl, control=rpart::rpart.control(maxdepth=4), method = "class")
+
+load("/home/knut/Documents/blog-tranq/content/post/data/decisiontree.Rdata")
+rpart.plot::rpart.plot(decision_tree, tweak = 2, faclen=12)
+
+
+
+```
+
+```{r}
+#fit and plot conditional inference trees
+cond_inf_tree<-partykit::ctree(clusters~., data = socio_economic_vars_cl, control = partykit::ctree_control(maxdepth = 3))
+
+load("/home/knut/Documents/blog-tranq/content/post/data/cond_inf_tree.Rdata")
+library(partykit)
+plot(cond_inf_tree, gp = gpar(fontsize = 8), srt=85,  
+inner_panel=node_inner, ep_args = list(justmin = 10),
+ip_args=list(
+abbreviate = F,
+id = FALSE)
+)
+
+```
+
+
+Looking at the "usual" decision tree, we see that 32% less educated customers have a predicted membership in cluster 1, and sometimes have lower middle class jobs. 23 % of the customers have other (higher) education backgrounds and are singles, being predicted to be in cluster 2, being adults. 33 % of the customers have married at some point and are most likely over 30 years old and have other jobs than lower middle class jobs, with predicted cluster 3 membership.  
+
+The important role of education as differentiator amongst the customers is corroborated by  the second decision tree algorithm. People in cluster 1 tend to have marriage background and jobs from a broader spectrum with lower educational background. Cluster 2 people have higher education, have been married and have middle class jobs. Cluster 3 consists out of single, young people, young adults and adults with higher educational background.  
+
+The picture emerging is that of  
+- uneducated singles or (divorced) couples in cluster 3 with lower middle class jobs  
+- (young) single adults with a degree including blue collar workers and students in cluster 2  
+- higher educated individuals with marriage background and (upper) middle class jobs in cluster 3  
+
+Additionally, we can look at what other attributes are associated with the clusters. We can use both the customer identity embeddings as well as the socio-demographics embeddings to learn more about what traits describe certain kinds of customers.  
+Let's first look at the clusters. Like for word embeddings, we can just calculate the cosine similarity between the demographics labels and others or the mean vectors of each cluster.  
+
+```{r}
+#first calculate mean customer id vectors
+library(wordVectors)
+mean_cluster_1_al_bundies_and_peggies<-as.VectorSpaceModel(t(matrix(colMeans(customer_identity_vectors[clusters$cluster==1,]))))
+
+mean_cluster_3_blakes_workaholics_jds_scrubs<-as.VectorSpaceModel(t(matrix(colMeans(customer_identity_vectors[clusters$cluster==2,]))))
+
+mean_cluster_2_walter_whites_breaking_bad<-as.VectorSpaceModel(t(matrix(colMeans(customer_identity_vectors[clusters$cluster==3,]))))
+
+
+#then calculate socio-demo category labels similarities
+
+al_bundies_socio_demo_associations<-data.frame(similarity=t(as.data.frame(cosineSimilarity(mean_cluster_1_al_bundies_and_peggies, demographics_vectors))))
+al_bundies_socio_demo_associations$socio_demo_category<-rownames(al_bundies_socio_demo_associations)
+
+
+jds_socio_demo_associations<-data.frame(similarity=t(as.data.frame(cosineSimilarity(mean_cluster_3_blakes_workaholics_jds_scrubs, demographics_vectors))))
+jds_socio_demo_associations$socio_demo_category<-rownames(jds_socio_demo_associations)
+
+
+walter_whites_socio_demo_associations<-data.frame(similarity=t(as.data.frame(cosineSimilarity(mean_cluster_2_walter_whites_breaking_bad, demographics_vectors))))
+walter_whites_socio_demo_associations$socio_demo_category<-rownames(walter_whites_socio_demo_associations)
+
+
+
+htmlTable(dplyr::select(dplyr::arrange(al_bundies_socio_demo_associations, desc(similarity)), socio_demo_category, similarity))
+
+```
+
+So, for the less educated customers we see most prototypically they are retired, housemaids or blue-collar workers and are less associated with younger people or higher education, which fits in the picture.  
+However, note that these numbers do not represent how many customers are like this, it is more a picture of the most prototypical members (mean / middle in the customer2vec space) of these cluster. Close to those might be others with much more counts. So to get a better picture of stereotypical socio-demos, we also consider the categories counts within the cluster:  
+
+
+```{r}
+#little bit of data wrangeling to get a stereotypicity metric
+category_labels_counts_within_cluster1<-rlist::list.rbind(lapply(lapply(socio_economic_vars_cl[socio_economic_vars_cl$clusters==1,], table), as.data.frame))
+category_labels_counts_within_cluster1$socio_demo_variable<-rownames(category_labels_counts_within_cluster1)
+
+
+al_bundies_socio_demo_associations<-dplyr::left_join(al_bundies_socio_demo_associations, category_labels_counts_within_cluster1, by=c("socio_demo_category"="Var1"))
+
+al_bundies_socio_demo_associations$stereotypicity<-al_bundies_socio_demo_associations$similarity*al_bundies_socio_demo_associations$Freq
+
+
+data<-dplyr::select(dplyr::arrange(al_bundies_socio_demo_associations, desc(stereotypicity)), socio_demo_category, stereotypicity, similarity, Freq)
+
+widgetframe::frameWidget(
+  DT::datatable(data, extensions = 'FixedColumns',
+  options = list(
+  scrollX = TRUE,
+  scrollCollapse = T
+)), height = 600)
+
+
+```
+
+So, by taking the frequencies into account, we see that blue-collar, married with basic school education is a much better description than the few, but very prototypical, cases of retired people in this cluster (for fun let's call it Al bundy cluster).  
+
+Lets check out the same for the other two clusters:  
+
+```{r}
+#little bit of data wrangeling to get a stereotypicity metric
+category_labels_counts_within_cluster3<-rlist::list.rbind(lapply(lapply(socio_economic_vars_cl[socio_economic_vars_cl$clusters==3,], table), as.data.frame))
+category_labels_counts_within_cluster3$socio_demo_variable<-rownames(category_labels_counts_within_cluster3)
+
+
+jds_socio_demo_associations<-dplyr::left_join(jds_socio_demo_associations, category_labels_counts_within_cluster3, by=c("socio_demo_category"="Var1"))
+
+jds_socio_demo_associations$stereotypicity<-jds_socio_demo_associations$similarity*jds_socio_demo_associations$Freq
+
+
+
+data<-dplyr::select(dplyr::arrange(jds_socio_demo_associations, desc(stereotypicity)), socio_demo_category, stereotypicity, similarity, Freq)
+
+widgetframe::frameWidget(
+  DT::datatable(data, extensions = 'FixedColumns',
+  options = list(
+  scrollX = TRUE,
+  scrollCollapse = T
+)), height = 600)
+
+
+```
+
+Customers from cluster 3 (Scrubs cluster) tend to have higher education, middle class jobs. They are also relatively often young adults, but are less dissimilar to older people than to younger people in some regards. As we have seen before, adult people with administrative jobs have been found extraordinary using the isolation forest algorithm. These may be relatively young people with enough wealth to afford saving money, which is more like stuff typically elderly may afford to do. 
+
+
+```{r}
+#little bit of data wrangeling to get a stereotypicity metric
+category_labels_counts_within_cluster2<-rlist::list.rbind(lapply(lapply(socio_economic_vars_cl[socio_economic_vars_cl$clusters==2,], table), as.data.frame))
+category_labels_counts_within_cluster2$socio_demo_variable<-rownames(category_labels_counts_within_cluster2)
+
+
+walter_whites_socio_demo_associations<-dplyr::left_join(walter_whites_socio_demo_associations, category_labels_counts_within_cluster2, by=c("socio_demo_category"="Var1"))
+
+walter_whites_socio_demo_associations$stereotypicity<-walter_whites_socio_demo_associations$similarity*walter_whites_socio_demo_associations$Freq
+
+
+
+data<-dplyr::select(dplyr::arrange(walter_whites_socio_demo_associations, desc(stereotypicity)), socio_demo_category, stereotypicity, similarity, Freq)
+
+widgetframe::frameWidget(
+  DT::datatable(data, extensions = 'FixedColumns',
+  options = list(
+  scrollX = TRUE,
+  scrollCollapse = T
+)), height = 600)
+
+
+```
+
+For these individuals from cluster 2 (Walter Whites cluster), we see that they tend to have no personal loan, a university degree or other higher education and a (higher) middle class job and are just of adult age and may be singles.   
+
+
+Next we want to add these features (customer identity embeddings and clusters) to the dataset, and we need to create helper models to assign these values to unseen data as well.  
+
+```{r}
+#add clusters and customer identity embeddings to the dataset
+
+clusters_df<-data.frame(clusters=as.factor(clusters$cluster)[1:nrow(dataset)])
+customer2vec_df<-as.data.frame(as.matrix.POSIXlt(customer_identity_vectors))
+
+dataset<-dplyr::bind_cols(dataset, clusters_df, customer2vec_df)
+
+predict_df_c2vec<-dplyr::select(dataset, -y, -clusters)
+predict_df_clusters<-dplyr::select(dataset, -(V1:V10), -y)
+
+predict_clusters<-ranger::ranger(dependent.variable.name = "clusters", data = predict_df_clusters, num.trees = 128, write.forest = T, respect.unordered.factors = T)
+predict_clusters
+
+predict_c2vec<-ranger::ranger(V1 + V2 + V3 +  V4 + V5 + V6 + V7 + V8 + V9 + V10~., data = predict_df_c2vec, num.trees = 128, write.forest = T, respect.unordered.factors = T)
+predict_c2vec
+
+
+#prediction error looks ok for both deployment helper models
+
+```
+
+
+
+## Feature Selection
+There are lot's of ways of doing this, using wrappers around ML algos and measuring their performance or less computationally expensive indicators, on which I will focus upon here.  
+
+We combine several indicators in a simple way, by averaging the variables importance ranking:  
+- Random forest variable importance measures (gini & permutation based)  
+- Conditional inference tree importance measures (accuracy and AUC based)  
+- several information gain related measures  
+
+Let's go through the inner workings of one of the more interesting algorithms:
+Conditional inference tree based random forest area under the curve importance measure. It is less biased in cases of imbalanced data (see https://epub.ub.uni-muenchen.de/14206/).  
+In a nutshell, the sum of the difference between the AUC of the original and randomly permuted data is calculated, the bigger the difference, the more important the variable. We are clealy dealing with imbalanced response variables:  
+```{r}
+#show imbalanced data
+barplot<-ggplot2::ggplot(dataset, aes(x=y)) + geom_bar(aes(fill=y), position="stack", alpha=1) + theme_bw() + theme(text=element_text(family="sans", face="plain", color="#000000", size=15, hjust=0.5, vjust=0.5)) + ggtitle("Imbalanced Target Variable") + xlab("subscribe to term deposit") + ylab("count")
+
+barplot
+```
+
+However, because there is no single "right" automated way of estimating attribute importance, we still prefer to combine several measures in an ensemble measure. 
+When looking at the table below, remember that variables named V1, V2, ... are the variables of the customer identity embeddings. 
+
+```{r}
+#train conditional inference trees forest (takes quite some time, so it is commented out here)
+
+# partyforest<-party::cforest(y~., dataset, control=party::cforest_unbiased(ntree=64))
+
+#extract area under the curve based variable importance (takes some time)
+#var_imp<-party::varimpAUC(partyforest)
+load("/home/knut/Documents/blog-tranq/content/post/data/var_imp_cforest.Rdata")
+
+variable_importances_ctree_auc<-data.frame(permutation_importance=var_imp)
+variable_importances_ctree_auc$variable<-colnames(dplyr::select(dataset, -y))
+variable_importances_ctree_auc<-dplyr::arrange(variable_importances_ctree_auc, desc(permutation_importance))
+variable_importances_ctree_auc$rank<-1:nrow(variable_importances_ctree_auc)
+colnames(variable_importances_ctree_auc)<-c("importance", "variable", "rank")
+
+load("/home/knut/Documents/blog-tranq/content/post/data/partyforest.Rdata")
+# accuracy cforest importance
+# var_imp2<-party::varimp(partyforest)
+variable_importances_ctree_acc<-data.frame(permutation_importance=var_imp2)
+variable_importances_ctree_acc$variable<-colnames(dplyr::select(dataset, -y))
+variable_importances_ctree_acc<-dplyr::arrange(variable_importances_ctree_acc, desc(permutation_importance))
+variable_importances_ctree_acc$rank<-1:nrow(variable_importances_ctree_acc)
+colnames(variable_importances_ctree_acc)<-c("importance", "variable", "rank")
+
+
+
+
+#redo for usual random forest on permutation importance
+rf<-ranger::ranger(dependent.variable.name = "y", data = dataset, num.trees = 128, respect.unordered.factors = T, importance = "permutation")
+
+variable_importances_perm<-data.frame(permutation_importance=rf$variable.importance)
+variable_importances_perm$variable<-colnames(dplyr::select(dataset, -y))
+variable_importances_perm<-dplyr::arrange(variable_importances_perm, desc(permutation_importance))
+variable_importances_perm$rank<-1:nrow(variable_importances_perm)
+colnames(variable_importances_perm)<-c("importance", "variable", "rank")
+
+
+#redo for usual random forest on impurity importance
+rf<-ranger::ranger(dependent.variable.name = "y", data = dataset, num.trees = 128, respect.unordered.factors = T, importance = "impurity")
+
+variable_importances_imp<-data.frame(impurity_importance=rf$variable.importance)
+variable_importances_imp$variable<-colnames(dplyr::select(dataset, -y))
+variable_importances_imp<-dplyr::arrange(variable_importances_imp, desc(impurity_importance))
+variable_importances_imp$rank<-1:nrow(variable_importances_imp)
+colnames(variable_importances_imp)<-c("importance", "variable", "rank")
+
+
+#information gain based metrics
+library(FSelectorRcpp)
+x<-information_gain(y~., dataset, type = "infogain")%>%dplyr::arrange(desc(importance))
+x<-x%>%dplyr::mutate(rank=1:nrow(x))%>%dplyr::rename(variable=attributes)
+y<-information_gain(y~., dataset, type = "gainratio")%>%dplyr::arrange(desc(importance))
+y<-y%>%dplyr::mutate(rank=1:nrow(y))%>%dplyr::rename(variable=attributes)
+z<-information_gain(y~., dataset, type = "symuncert")%>%dplyr::arrange(desc(importance))
+z<-z%>%dplyr::mutate(rank=1:nrow(z))%>%dplyr::rename(variable=attributes)
+
+
+#calculate mean importance rank
+variable_importances<-dplyr::bind_rows(variable_importances_ctree_auc, variable_importances_ctree_acc, variable_importances_perm, variable_importances_imp, x, y, z)%>%dplyr::group_by(variable)%>%dplyr::summarise(median_rank=median(rank))%>%dplyr::arrange(median_rank)
+
+
+htmlTable(variable_importances)
+
+
+```
+
+To decide on how many we want to keep, let's look at at how the top k variables affect the true positive rate from undersampled data (as sampled by random forest):  
+
+```{r}
+
+accuracy_df<-data.frame(accuracy=numeric())
+i = 0
+
+while (i < nrow(variable_importances)){
+  pracma::tic()
+  i = i + 1
+  rf_pred<-randomForestSRC::rfsrc(y~., data = dataset[,c("y", variable_importances$variable[1:i]),with=F], ntree = 20,
+           case.wt = randomForestSRC:::make.wt(dataset$y),
+           sampsize = randomForestSRC:::make.size(dataset$y))
+  
+predictions<-as.character(rf_pred$class.oob)
+predictions[predictions=="yes"]<-1
+predictions[predictions=="no"]<-0
+predictions<-as.numeric(predictions)
+actual<-as.character(dataset$y)
+actual[actual=="yes"]<-1
+actual[actual=="no"]<-0
+actual<-as.numeric(actual)
+
+accuracy=Metrics::accuracy(dataset$y, rf_pred$class.oob)
+f1=EvaluationMeasures::EvaluationMeasures.F1Score(c(actual), c(predictions))
+precision=EvaluationMeasures::EvaluationMeasures.Precision(c(actual), c(predictions))
+recall=EvaluationMeasures::EvaluationMeasures.Recall(c(actual), c(predictions))
+tpr=EvaluationMeasures::EvaluationMeasures.TPR(c(actual), c(predictions))
+  
+  accuracy_df<-dplyr::bind_rows(accuracy_df, data.frame(accuracy=accuracy, f1=f1, precision=precision, recall=recall, tpr=tpr))
+  print(paste0("Model training and out-of-bag predictions using the top ", i, " variables took ", pracma::toc(), " seconds"))
+}
+```
+
+Let's plot the thing. Hover over the line to see the added variables name:
+
+```{r}
+accuracy_df$variable_count<-1:nrow(variable_importances)
+accuracy_df$added_variable<-variable_importances$variable
+
+
+library(ggplot2)
+lineplot<-ggplot(accuracy_df, aes(y=accuracy, x=variable_count)) + geom_line(stat="identity", position="identity", alpha=1) + theme_bw() + theme(text=element_text(family="sans", face="plain", color="#000000", size=15, hjust=0.5, vjust=0.5)) + ggtitle("Change in Accuracy Score with top K features") + xlab("top k variables") + ylab("accuracy")
+
+p<-plotly::ggplotly(lineplot)
+p$x$data[[1]]$text = paste("Added variable: ", accuracy_df$added_variable)
+p
+```
+
+If we were after accuracy, we could go with the top 3 or 11 variables. However, we are, from a business perspective, also interested in the true positive rate: recognizing each customer that wants to subscribe to the bank deposit makes much more money than spending a little too much on unsuccesful calls. Things look very different when we look at the true positive rate. When we look at these results, we do not want to get rid of those variables, are likely to increase the TPR:  
+
+
+```{r}
+lineplot<-ggplot(accuracy_df, aes(y=tpr, x=variable_count)) + geom_line(stat="identity", position="identity", alpha=1) + theme_bw() + theme(text=element_text(family="sans", face="plain", color="#000000", size=15, hjust=0.5, vjust=0.5)) + ggtitle("True Positive Rate with top K features") + xlab("top k variables") + ylab("True Positive Rate")
+
+p<-plotly::ggplotly(lineplot)
+p$x$data[[1]]$text = paste("Added variable: ", accuracy_df$added_variable)
+p
+
+```
+
+
+So we select the top 3 variables, which helped to raise accuracy the most, as well as those which appear to have a positive effect on tpr. And of course we do not include the duration variable, which is unkown during prediction.  
+
+```{r}
+#select only non-damaging features for tpr
+dataset<-dplyr::select(dataset, emp.var.rate, euribor3m, cons.conf.idx, pdays, nr.employed, cons.price.idx, month, default, V7, V3, V9, clusters, socio_eco, housing, y)
+
+
+```
+
+
+
+#### A final transformation
+So here we go creating dummy variables for the categorical variables. 
+
+```{r}
+#dummy variables
+
+dataset<-dplyr::bind_cols(DataExplorer::dummify(dplyr::select(dataset, -y)), dplyr::select(dataset, y))
+```
+
+
+## Modeling & Evaluation
+
+We need to define evaluation metrics relevant for the problem. Accuracy is an obvious one, but not sufficient, because we may also find it more important, that the algorithm spots as many true buyers as possible, because the telemarketeers labour costs do not outweight the potential gain from getting customers to subscribe to the term deposit (about a lot of money to make money with). So the true positive rate is interesting to monitor. 
+
+
+
+I choose the simple setup of creating training, validation & test datasets. 
+We use the validation data to compare different learners with each other. 
+The data is highly imbalanced (more no sayers than yes sayers), which is problematic for a lot of machine learning algorithms:  
+
+
+
+We create training, validation and test datasets with a split of 80 % / 10 % / 10 %. 
+To oversample the unbalanced training data, we apply the SMOTE algorithm.  
+The general principle behind SMOTE is to artificially create new data for the underrepresented class (actual bank deposit subscribers). For thisusing the k nearest neighbor algorithm is used to find new minority instances for the real instances, the artificial instances are then created as instances between the k nearest neighbors and the original real minority instance. 
+
+```{r}
+# split up dataset for training, validation and testing
+
+#get record ids
+trainset_ids<-sample(1:nrow(dataset), size = nrow(dataset)*0.8)
+all_ids<-1:nrow(dataset)
+rest_ids<-all_ids[(1:nrow(dataset)%in%trainset_ids==F)]
+validation_ids<-sample(rest_ids, size = length(rest_ids)*(1/2))
+rest_ids<-rest_ids[rest_ids%in%validation_ids==F]
+test_ids<-sample(rest_ids, size = length(rest_ids))
+
+
+#split up the data
+training_data<-dataset[trainset_ids,]
+validation_data<-dataset[validation_ids,]
+testing_data<-dataset[test_ids,]
+
+
+#smote the trainingdata
+
+
+times_to_oversample<-nrow(training_data[training_data$y=="no",])/nrow(training_data[training_data$y=="yes",])
+library(SMOTE)  #this is a nice and very fast SMOTE implementation found here: https://github.com/drohner/SMOTE
+traindata_smote<-smote.concatinated(training_data, col = ncol(training_data), char = 'yes', cores = 4, o = round(times_to_oversample))
+traindata_smote<-rbind(traindata_smote, training_data)
+
+```
+
+#### Modeling
+Now to the modelling. We will train a support vector machine, random forest, xgboost, neural network, knn and do hyperparameter optimization. We do a grid search for less expensive models: random forest, decision tree, lightgbm/xgboost, support vector machine, neural network and knn (expensive  during prediction).  
+For fun and to play with amazon aws a bit, we do this on an EC2 instance with 32 2.7GHz i7 cores and with rather unnecessary 60 GB RAM for 1.5 dollar per hour. This helps us to quickyl tune the hyperparameters in parallel.
+
+You can easily get an instance up and running and use it as like a remote desktop:
+
+```{r, echo=F}
+grid::grid.raster(png::readPNG("data/parallel_tuning.png"))
+```
+
+
+
+For hyperparameter tuining, we use model based hyperparameter optimization in most instances. A high level explanation of model based hyperparameter tuning goes like this:  
+- estimate a probabilistic or surrogate model mapping the hyperparameters to the objective function.  The aim is to model P(score | hyperparameters)  
+- there are several ways of constructing the surrogate model, including training random forest regressors & using the standard error of the trees for a given hyperparameter setting to it's estimate uncertainty  
+- this surrogate model to estimate hyperparameters which are most promising (according to the surrogate model), i.e. by choosing settings which yield the highest expected improvement  
+- Use them on the real model  
+- Refit the surrogate model with the new results / scores  
+- Repeat for max ieterations or max time  
+
+This is more efficient than ramdom search or grid search, because the hyperparameters are chosen in an informed or "smarter" way than blindly picking them from a  grid or by random. Only the most promising hyperparameter settings are tried out in bayesian model optimization. 
+
+
+#### Model Benchmarking & Model Selection
+
+```{r}
+
+#to reload the data in the aws instance, save the datasets
+
+# readr::write_tsv(traindata_smote, "data/traindata_smote.csv")
+# readr::write_tsv(validation_data, "data/validation_data.csv")
+# readr::write_tsv(testing_data, "data/testing_data.csv")
+
+#reload whilst in the cloud
+
+traindata_smote<-data.table::fread("data/traindata_smote.csv")
+validation_data<-data.table::fread("data/validation_data.csv")
+testing_data<-data.table::fread("data/testing_data.csv")
+
+
+
+```
+
+
+```{r}
+
+library(mlrHyperopt)
+library(mlr)
+library(parallelMap)
+
+#load all objects in this cell
+#workspace file is too large for gitlab upload
+
+load("/home/knut/Desktop/workspace2.RData")
+
+# task <- makeClassifTask(id = "telemarketing", data = as.data.frame(traindata_smote), target="y")
+# 
+# parallelStartMulticore(parallel::detectCores())
+# 
+# 
+# #download hyperparameter search spaces and make learners
+# 
+# searchspace_knn <- downloadParConfigs(learner.name = "kknn")
+# knn_opt <- hyperopt(task, learner = "classif.kknn", par.config = searchspace_knn[[1]])
+# 
+# 
+# nBayes <- makeLearner("classif.naiveBayes")
+# nby<-mlr::train(nBayes, task = task)
+# 
+# nnet_opt <- hyperopt(task, learner = "classif.nnet")
+# 
+# svm_opt <- hyperopt(task, learner = "classif.svm")
+# 
+# random_forest_opt <- hyperopt(task, learner = "classif.ranger")
+# 
+# #in an earlier run found these settings to be effective
+# random_forest_learner<-makeLearner(cl = "classif.ranger", id="randomf", num.trees = 128, mtry=22, min.node.size=10, num.threads=4)
+# 
+# random_forest_opt<-train(makeLearner(cl = "classif.ranger", id="randomf", num.trees = 128, mtry=22, min.node.size=10, num.threads=4), task)
+# 
+# 
+# 
+# 
+# #sample data for svm task which otherwise takes too long to train
+# 
+# sample_df<-dplyr::sample_n(traindata_smote,10000)
+# svm_task <- makeClassifTask(id = "telemarketing", data = as.data.frame(sample_df), target="y")
+# 
+# svm_opt <- hyperopt(svm_task, learner = "classif.svm")
+# 
+# 
+# 
+# parallelStop()
+# 
+# 
+# #benchmarking
+# parallelStartMulticore(parallel::detectCores())
+# 
+# lrns <-c("classif.kknn", "classif.naiveBayes", "classif.nnet", "classif.svm", "classif.ranger", "classif.svm")
+# lrns <- makeLearners(lrns)
+# 
+# lrns.tuned<-list(nBayes, setHyperPars(lrns$classif.kknn, par.vals = knn_opt$x), setHyperPars(lrns$classif.nnet, par.vals = nnet_opt$x), setHyperPars(lrns$classif.svm, par.vals = svm_opt$x), random_forest_learner)
+# 
+# res = mlr::benchmark(learners = lrns.tuned, tasks = task, resamplings = cv10)
+# parallelStop()
+# plotBMRBoxplots(res) 
+# save.image("~/Desktop/workspace2.RData")
+# 
+# #train to check with validation set
+# cl<-parallel::makeCluster(parallel::detectCores())
+# clusterEvalQ(cl, {library(mlrHyperopt); library(mlr)})
+# trained_learners<-parallel::parLapply(cl, X=lrns.tuned, fun=train, task=task)
+# parallel::stopCluster(cl)
+# 
+# 
+# 
+# 
+# #xgboost training needs binary target
+# #so we need to create an extra task for it
+# traindata_smote_xgb<-traindata_smote
+# 
+# traindata_smote_xgb$y2<-as.numeric(as.factor(traindata_smote_xgb$y))
+# traindata_smote_xgb[traindata_smote_xgb$y2<2,"y2"]<-F
+# traindata_smote_xgb[traindata_smote_xgb$y2==2,"y2"]<-T
+# 
+# 
+# traindata_smote_xgb$y2<-as.numeric(traindata_smote_xgb$y2)
+# traindata_smote_xgb$y<-as.numeric(traindata_smote_xgb$y2)
+# traindata_smote_xgb<-dplyr::select(traindata_smote_xgb, -y2)
+# 
+# traindata_smote_xgb$y<-as.logical(traindata_smote_xgb$y)
+# 
+# xgb_task <- makeClassifTask(id = "telemarketing", data = as.data.frame(traindata_smote_xgb), target="y")
+# 
+# autoxgboost_opt<-autoxgboost::autoxgboost(task = xgb_task)
+# 
+# library(BBmisc)
+# xgb_benchmark = mlr::benchmark(learners = autoxgboost_opt$final.model$learner, tasks = xgb_task, resamplings = cv10)
+# 
+# xgboost_trained<-autoxgboost_opt$final.model$learner.model
+
+
+#let's take a look at the benchmark data
+
+crossvalidation_benchmark_results<-dplyr::bind_rows(as.data.frame(res), as.data.frame(xgb_benchmark))
+
+crossvalidation_benchmark_results$mmce<-1-crossvalidation_benchmark_results$mmce
+
+crossvalidation_benchmark_results<-tidyr::separate(crossvalidation_benchmark_results, learner.id, into=c("class", "learner.id", "rest"), sep="[.]", extra="warn")
+
+crossvalidation_benchmark_results[crossvalidation_benchmark_results$class=="randomf", "learner.id"]<-"randomForest"
+
+ggplot(crossvalidation_benchmark_results, aes(y=mmce, x=as.factor(learner.id))) + geom_boxplot(stat="boxplot", position="dodge", alpha=1, width=0.2) + theme_bw() + theme(text=element_text(family="Times", face="plain", color="#000000", size=15, hjust=0.5, vjust=0.5)) + ggtitle("Accurcy for 10-fold crossvalidation") + xlab("Algorithm") + ylab("Accuracy")
+
+
+
+```
+
+We can see that the random forest and k-nearest neighbor show very high accuracy in the upsampled, cross-validated training data. For a more reliable  estimate of actual accuracy and other metrics, we apply the algorithms to the  validation set as well, so we can make an unbiased selection of a suitable algorithm. 
+
+
+```{r}
+library(mlr)
+library(e1071)
+library(nnet)
+
+get_evaluation_data<-function(dataset=validation_data){
+  predictions<-list()
+for (i in 1:5){
+  predict<-predictLearner(.learner=lrns.tuned[[i]], .model=trained_learners[[i]], .newdata=dataset)
+  predictions<-rlist::list.append(predictions, predict)
+  
+}
+
+
+library(xgboost)
+library(autoxgboost)
+xgb_task_check <- makeClassifTask(id = "telemarketing", data = as.data.frame(dataset), target = "y")
+
+predictions_xgb<-as.data.frame(predict(autoxgboost_opt, as.data.frame(dplyr::select(dataset, -y))))
+
+#turn class probabilities to label predictions
+predictions_xgb$labels<-"yes"
+predictions_xgb[predictions_xgb$`0`>predictions_xgb$`1`,"labels"]<-"no"
+
+
+#helper data frame to check several metrics
+
+names(predictions)<-unique(crossvalidation_benchmark_results$learner.id)[1:5]
+
+predictions<-lapply(predictions, as.character)
+
+metrics_df<-as.data.frame(cbind(rlist::list.cbind((predictions)), xgboost=predictions_xgb$labels))
+
+metrics_df<-cbind(tidyr::gather(data = metrics_df, key="key", value="value", naiveBayes:xgboost), actual=rep(dataset$y, ncol(metrics_df)))
+
+
+metrics_df$value_binary<-as.character(metrics_df$value)
+metrics_df$value_binary[metrics_df$value_binary=="yes"]<-1
+metrics_df$value_binary[metrics_df$value_binary=="no"]<-0
+metrics_df$value_binary<-as.numeric(metrics_df$value_binary)
+
+
+metrics_df$actual_binary<-as.character(metrics_df$actual)
+metrics_df$actual_binary[metrics_df$actual_binary=="yes"]<-1
+metrics_df$actual_binary[metrics_df$actual_binary=="no"]<-0
+metrics_df$actual_binary<-as.numeric(metrics_df$actual_binary)
+
+
+
+library(Metrics)
+library(EvaluationMeasures)
+
+
+metrics_df<-metrics_df%>%dplyr::group_by(key)%>%dplyr::summarise(accuracy=accuracy(actual = actual, predicted = value), F1=EvaluationMeasures.F1Score(actual_binary, value_binary), TPR=EvaluationMeasures.TPR(actual_binary, value_binary), Precision=EvaluationMeasures.Precision(actual_binary, value_binary))
+
+return(metrics_df)
+
+}
+
+validation_data_metrics<-get_evaluation_data()
+
+plotluck::plotluck(validation_data_metrics, key~., opts = plotluck::plotluck.options(multi.in.grid=F))
+
+
+```
+
+
+We can see that althought the accuracy is the highest for the random forest, results are more balanced for the  neural network. Especially the true positive rate, which is important from a business standpoint (we we want as much good prospects to be called and convert into profitable sold term deposits), is better for the neural network than for most other algorithms. Xgboost on the otherhand is too much biased towards finding potential customers and thus has low precision and low F1 scores. It does not help if the algorithm simply predicts to call everybody. So our choice is  for the overall well balanced neural network having descend accuracy as well.  
+
+Now that we have decided upon the model, we apply it to the test data to get an unbiased estimate of it's performance. 
+
+
+#### Evaluation
+
+```{r}
+
+testset_metrics<-get_evaluation_data(dataset = testing_data)
+
+htmlTable(t(testset_metrics[testset_metrics$key=="nnet",]))
+
+
+
+```
+
+
+No surprises here. So we can report that our model has an accuracy of 81 % and  identifies 61 % of all potential subscribers, although in the actual dataset, these make only a very small percentage of our customers. 
+This model can help to identify a lot of correct targets for the telemarketing campaign. 
+Fun exercise!
+
+
+
+
+
+
+The content of this page is licensed under the Creative Commons Attribution 3.0 License. 

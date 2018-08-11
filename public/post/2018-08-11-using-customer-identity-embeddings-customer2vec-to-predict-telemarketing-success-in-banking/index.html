@@ -1,0 +1,3033 @@
+
+
+  
+    
+  
+
+
+  
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="Hugo 0.39 with theme Tranquilpeak 0.4.3-BETA">
+    <title>Using Customer Identity Embeddings (Customer2Vec) to predict Telemarketing success in Banking</title>
+    <meta name="author" content="">
+    <meta name="keywords" content="">
+
+    <link rel="icon" href="/favicon.png">
+    
+
+    
+    <meta name="description" content="Customer2vec
+ The why  You’re curious about customer2vec
+ You’re new to data science and would like to to see one of the many possible work flows in R You’re just as curious as I am about fiddling around with R blogdown for data driven storytelling For me this is a nice toy dataset to play with  The purpose of this post is mainly to exercise a bit of data mining, using the reknown case about predicting effectiveness of a direct marketing intervention of a bank from the UCI ML repository (find it here: https://archive.">
+    <meta property="og:description" content="Customer2vec
+ The why  You’re curious about customer2vec
+ You’re new to data science and would like to to see one of the many possible work flows in R You’re just as curious as I am about fiddling around with R blogdown for data driven storytelling For me this is a nice toy dataset to play with  The purpose of this post is mainly to exercise a bit of data mining, using the reknown case about predicting effectiveness of a direct marketing intervention of a bank from the UCI ML repository (find it here: https://archive.">
+    <meta property="og:type" content="blog">
+    <meta property="og:title" content="Using Customer Identity Embeddings (Customer2Vec) to predict Telemarketing success in Banking">
+    <meta property="og:url" content="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking/">
+    <meta property="og:site_name" content="My New Hugo Site">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="My New Hugo Site">
+    <meta name="twitter:description" content="Customer2vec
+ The why  You’re curious about customer2vec
+ You’re new to data science and would like to to see one of the many possible work flows in R You’re just as curious as I am about fiddling around with R blogdown for data driven storytelling For me this is a nice toy dataset to play with  The purpose of this post is mainly to exercise a bit of data mining, using the reknown case about predicting effectiveness of a direct marketing intervention of a bank from the UCI ML repository (find it here: https://archive.">
+    
+    
+
+    
+    
+
+    
+
+    
+    
+    
+
+    
+
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.4/jquery.fancybox.min.css" integrity="sha256-vuXZ9LGmmwtjqFX1F+EKin1ThZMub58gKULUyf0qECk=" crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.4/helpers/jquery.fancybox-thumbs.min.css" integrity="sha256-SEa4XYAHihTcEP1f5gARTB2K26Uk8PsndQYHQC1f4jU=" crossorigin="anonymous" />
+    
+    
+    <link rel="stylesheet" href="/css/style-jsjn0006wyhpyzivf6yceb31gvpjatbcs3qzjvlumobfnugccvobqwxnnaj8.min.css" />
+    
+    
+
+    
+      
+    
+    
+  </head>
+
+  <body>
+    <div id="blog">
+      <header id="header" data-behavior="">
+  <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+  <div class="header-title">
+    <a class="header-title-link" href="/">My New Hugo Site</a>
+  </div>
+  
+</header>
+
+      <nav id="sidebar" data-behavior="">
+  <div class="sidebar-container">
+    
+    <ul class="sidebar-buttons">
+      
+
+    </ul>
+    <ul class="sidebar-buttons">
+      
+
+    </ul>
+    <ul class="sidebar-buttons">
+      
+
+    </ul>
+  </div>
+</nav>
+
+      
+
+      <div id="main" data-behavior=""
+        class="
+               hasCoverMetaIn
+               ">
+        <article class="post" itemscope itemType="http://schema.org/BlogPosting">
+          
+          
+            <div class="post-header main-content-wrap text-left">
+  
+    <h1 class="post-title" itemprop="headline">
+      Using Customer Identity Embeddings (Customer2Vec) to predict Telemarketing success in Banking
+    </h1>
+  
+  
+  <div class="postShorten-meta post-meta">
+    
+      <time itemprop="datePublished" datetime="2018-08-11T00:00:00Z">
+        
+   11, 2018
+
+      </time>
+    
+    
+  
+  
+    <span></span>
+    
+      <a class="category-link" href="/categories/data-mining">Data mining</a>
+    
+  
+
+  </div>
+
+</div>
+          
+          <div class="post-content markdown" itemprop="articleBody">
+            <div class="main-content-wrap">
+              <script src="/rmarkdown-libs/htmlwidgets/htmlwidgets.js"></script>
+<script src="/rmarkdown-libs/pymjs/pym.v1.js"></script>
+<script src="/rmarkdown-libs/widgetframe-binding/widgetframe.js"></script>
+<script src="/rmarkdown-libs/plotly-binding/plotly.js"></script>
+<script src="/rmarkdown-libs/typedarray/typedarray.min.js"></script>
+<script src="/rmarkdown-libs/jquery/jquery.min.js"></script>
+<link href="/rmarkdown-libs/crosstalk/css/crosstalk.css" rel="stylesheet" />
+<script src="/rmarkdown-libs/crosstalk/js/crosstalk.min.js"></script>
+<link href="/rmarkdown-libs/plotlyjs/plotly-htmlwidgets.css" rel="stylesheet" />
+<script src="/rmarkdown-libs/plotlyjs/plotly-latest.min.js"></script>
+
+
+<div class="figure">
+<img src="data/customer2vec.png" alt="Customer2vec" />
+<p class="caption">Customer2vec</p>
+</div>
+<div id="the-why" class="section level1">
+<h1>The why</h1>
+<ul>
+<li>You’re curious about customer2vec<br />
+</li>
+<li>You’re new to data science and would like to to see one of the many possible work flows in R</li>
+<li>You’re just as curious as I am about fiddling around with R blogdown for data driven storytelling</li>
+<li>For me this is a nice toy dataset to play with</li>
+</ul>
+<p>The purpose of this post is mainly to exercise a bit of data mining, using the reknown case about predicting effectiveness of a direct marketing intervention of a bank from the UCI ML repository (find it here: <a href="https://archive.ics.uci.edu/ml/datasets/bank+marketing" class="uri">https://archive.ics.uci.edu/ml/datasets/bank+marketing</a>). Let’s walk through the usual steps of the cross industry standard data mining process (CRISP-DM), meaning<br />
+1. business understanding,<br />
+2. data understanding, 3. EDA &amp; feature engineering (fun part)<br />
+4. as well as the technical exercise of modeling and evaluation. In principle, stuff like this could also done on kaggle, but since I did not hear about the concept of customer2vec anywhere else, I rather post it here as my own content.</p>
+<p>For deployment, I will likely write an extra post.</p>
+<div class="figure">
+<img src="data/crisp-dm.jpg" alt="CRISP-DM" />
+<p class="caption">CRISP-DM</p>
+</div>
+<pre class="r"><code>#plot crips-dm
+grid::grid.raster(jpeg::readJPEG(&quot;data/crisp-dm.jpg&quot;))</code></pre>
+<p><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
+</div>
+<div id="crisp-dm-phases" class="section level1">
+<h1>CRISP-DM Phases</h1>
+<div id="business-understanding" class="section level2">
+<h2>Business understanding</h2>
+<p>The problem we will look at is about a bank institution trying to sell a term deposit to their customers. A telemarketing campaign was done to sell the product by phone calling the banks customers.<br />
+Of course, the bank has created a database about their customers and we would like to help the bank to assess, which other customers are interesting prospects for the campaign. The problem is a binary classification problem, meaning that the target variable says if calling the customer has inspired them to subscribe to the term deposit.<br />
+In general, we also want to learn more about the type of customers, who are likely to subscribe, so that the telemarketeers can adjust their communications based on our customer insights.</p>
+</div>
+<div id="data-understanding-data-preparation" class="section level2">
+<h2>Data understanding &amp; Data Preparation</h2>
+<p>Let’s have a look at the dataset to understand what kind of data we have available for the task.</p>
+<pre class="r"><code>#download the dataset
+
+url = &quot;https://archive.ics.uci.edu/ml/machine-learning-databases/00222/bank-additional.zip&quot;
+#download.file(url, &quot;bank-additional.zip&quot;)
+#unzip(&quot;bank-additional.zip&quot;, exdir = &quot;data&quot;)
+#file.remove(&quot;bank-additional.zip&quot;)
+
+# check out the contents of the archive
+list.files(&quot;data/bank-additional&quot;)</code></pre>
+<pre><code>## [1] &quot;bank-additional-full.csv&quot;  &quot;bank-additional-names.txt&quot;
+## [3] &quot;bank-additional.csv&quot;</code></pre>
+<p>For this fun exercise, we use the extended dataset with more variables (bank-additional). According to the documentation, the complete dataset is found in the full file, and the names file describes the meaning of the variables. Let’s take a look at both of them.</p>
+<p>Luckily, detailed information about the meaning of the variables is available in the documentation. In practice this is of course often not the case. Here is what it says about the variables:</p>
+<p>Input variables:<br />
+# bank client data:<br />
+1 - age (numeric)<br />
+2 - job : type of job (categorical: “admin.”,“blue-collar”,“entrepreneur”,“housemaid”,“management”,“retired”,“self-employed”,“services”,“student”,“technician”,“unemployed”,“unknown”)<br />
+3 - marital : marital status (categorical: “divorced”,“married”,“single”,“unknown”; note: “divorced” means divorced or widowed)<br />
+4 - education (categorical: “basic.4y”,“basic.6y”,“basic.9y”,“high.school”,“illiterate”,“professional.course”,“university.degree”,“unknown”)<br />
+5 - default: has credit in default? (categorical: “no”,“yes”,“unknown”)<br />
+6 - housing: has housing loan? (categorical: “no”,“yes”,“unknown”)<br />
+7 - loan: has personal loan? (categorical: “no”,“yes”,“unknown”)<br />
+# related with the last contact of the current campaign: 8 - contact: contact communication type (categorical: “cellular”,“telephone”)<br />
+9 - month: last contact month of year (categorical: “jan”, “feb”, “mar”, …, “nov”, “dec”)<br />
+10 - day_of_week: last contact day of the week (categorical: “mon”,“tue”,“wed”,“thu”,“fri”)<br />
+11 - duration: last contact duration, in seconds (numeric). Important note: this attribute highly affects the output target (e.g., if duration=0 then y=“no”). Yet, the duration is not known before a call is performed. Also, after the end of the call y is obviously known. Thus, this input should only be included for benchmark purposes and should be discarded if the intention is to have a realistic predictive model.<br />
+# other attributes:<br />
+12 - campaign: number of contacts performed during this campaign and for this client (numeric, includes last contact)<br />
+13 - pdays: number of days that passed by after the client was last contacted from a previous campaign (numeric; 999 means client was not previously contacted)<br />
+14 - previous: number of contacts performed before this campaign and for this client (numeric)<br />
+15 - poutcome: outcome of the previous marketing campaign (categorical: “failure”,“nonexistent”,“success”)<br />
+# social and economic context attributes<br />
+16 - emp.var.rate: employment variation rate - quarterly indicator (numeric)<br />
+17 - cons.price.idx: consumer price index - monthly indicator (numeric)<br />
+18 - cons.conf.idx: consumer confidence index - monthly indicator (numeric)<br />
+19 - euribor3m: euribor 3 month rate - daily indicator (numeric)<br />
+20 - nr.employed: number of employees - quarterly indicator (numeric)</p>
+<p>Output variable (desired target):<br />
+21 - y - has the client subscribed a term deposit? (binary: “yes”,“no”)</p>
+<ol start="8" style="list-style-type: decimal">
+<li>Missing Attribute Values: There are several missing values in some categorical attributes, all coded with the “unknown” label.</li>
+</ol>
+<div id="a-look-at-the-dataset" class="section level3">
+<h3>A look at the dataset</h3>
+<p>We take a couple of notes about the dataset using this information. Of course, we will also look at the data itself to identify potential data cleaning tasks.</p>
+<ul>
+<li>there are several variables (like call duration), which directly come about from prior contact and should better only be used for exlorative aims: Our intention is to use the model on both customers with and without prior contact<br />
+</li>
+<li>number of days since previous call have a special value of 999 to indicate that the variable is not applicable (no previous call)<br />
+</li>
+<li>missing values have the label “unknown”. It is possible that some of them indicate buying the product or not</li>
+</ul>
+<p>Now let’s take a look at (a sample of) the dataset itself, before we check a couple of summary statistics:</p>
+<pre class="r"><code>library(magrittr)
+#look at the dataset
+
+
+dataset&lt;-data.table::fread(&quot;data/bank-additional/bank-additional-full.csv&quot;, stringsAsFactors=T)
+
+dataset[dataset==&quot;unknown&quot;]&lt;-NA
+
+widgetframe::frameWidget(
+  DT::datatable(dplyr::sample_n(dataset, 1000), extensions = &#39;FixedColumns&#39;,
+  options = list(
+  scrollX = TRUE,
+  scrollCollapse = T
+)), height = 600)</code></pre>
+<div id="htmlwidget-1" style="width:100%;height:600px;" class="widgetframe html-widget"></div>
+<script type="application/json" data-for="htmlwidget-1">{"x":{"url":"/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html//widgets/widget_unnamed-chunk-3.html","options":{"xdomain":"*","allowfullscreen":false,"lazyload":false}},"evals":[],"jsHooks":[]}</script>
+<p>We see that there are a lot of categorical variables present in our dataset. Let’s check if all datatypes are correctly assigned:</p>
+<pre class="r"><code>library(htmlTable)
+htmlTable(data.frame(datatype=sapply(dataset, class)))</code></pre>
+<table class="gmisc_table" style="border-collapse: collapse; margin-top: 1em; margin-bottom: 1em;">
+<thead>
+<tr>
+<th style="border-bottom: 1px solid grey; border-top: 2px solid grey;">
+</th>
+<th style="border-bottom: 1px solid grey; border-top: 2px solid grey; text-align: center;">
+datatype
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">
+age
+</td>
+<td style="text-align: center;">
+integer
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+job
+</td>
+<td style="text-align: center;">
+factor
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+marital
+</td>
+<td style="text-align: center;">
+factor
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+education
+</td>
+<td style="text-align: center;">
+factor
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+default
+</td>
+<td style="text-align: center;">
+factor
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+housing
+</td>
+<td style="text-align: center;">
+factor
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+loan
+</td>
+<td style="text-align: center;">
+factor
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+contact
+</td>
+<td style="text-align: center;">
+factor
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+month
+</td>
+<td style="text-align: center;">
+factor
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+day_of_week
+</td>
+<td style="text-align: center;">
+factor
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+duration
+</td>
+<td style="text-align: center;">
+integer
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+campaign
+</td>
+<td style="text-align: center;">
+integer
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+pdays
+</td>
+<td style="text-align: center;">
+integer
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+previous
+</td>
+<td style="text-align: center;">
+integer
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+poutcome
+</td>
+<td style="text-align: center;">
+factor
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+emp.var.rate
+</td>
+<td style="text-align: center;">
+numeric
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+cons.price.idx
+</td>
+<td style="text-align: center;">
+numeric
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+cons.conf.idx
+</td>
+<td style="text-align: center;">
+numeric
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+euribor3m
+</td>
+<td style="text-align: center;">
+numeric
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+nr.employed
+</td>
+<td style="text-align: center;">
+numeric
+</td>
+</tr>
+<tr>
+<td style="border-bottom: 2px solid grey; text-align: left;">
+y
+</td>
+<td style="border-bottom: 2px solid grey; text-align: center;">
+factor
+</td>
+</tr>
+</tbody>
+</table>
+<p>For now, this looks ok. We will likely make some changes during feature engineering. We can see that most features are categorical (in R categoricals are called factor variables).</p>
+</div>
+<div id="checking-data-quality-exploratory-data-analysis" class="section level3">
+<h3>Checking data quality &amp; exploratory data analysis</h3>
+<p>Let’s continue with some descriptive statistics to check if their are obvious problems with data quality. We also let take a look at the distribution of the variables.</p>
+<p>If you would like to learn more about assessing data quality, I can recommend the classic book “Exploratory Data Mining &amp; Data Cleaning” by Dasu &amp; Johnson (see <a href="https://books.google.de/books/about/Exploratory_Data_Mining_and_Data_Cleanin.html?id=2OWJVkevamQC&amp;redir_esc=y" class="uri">https://books.google.de/books/about/Exploratory_Data_Mining_and_Data_Cleanin.html?id=2OWJVkevamQC&amp;redir_esc=y</a>). Although data science is a relatively recent term, quite a lot’s of its concepts have been explored during the 90s by pioneering data miners working with the first large databases of usually large corporations.<br />
+Are their any suspicious missing values indicating data glitches?<br />
+Are there any extreme values, which are off the limits, when we take measures of spread as an error bound?</p>
+<pre class="r"><code># check summary statistics, missing value patterns etc
+summary_stats&lt;-dplyr::select(autoEDA::dataOverview(dataset), Feature, LowerOutliers:UpperOutlierValue, Observations:ZeroSpreadFeature)
+
+widgetframe::frameWidget(DT::datatable(summary_stats, extensions = &#39;FixedColumns&#39;,
+  options = list(
+  #dom = &#39;t&#39;,
+  scrollX = TRUE,
+  scrollCollapse = T, pageLength = 10, lengthMenu = c(5, 10, 15)
+)), height = 600)#, number_of_entries = c(25), width = 200))</code></pre>
+<div id="htmlwidget-2" style="width:100%;height:600px;" class="widgetframe html-widget"></div>
+<script type="application/json" data-for="htmlwidget-2">{"x":{"url":"/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html//widgets/widget_unnamed-chunk-5.html","options":{"xdomain":"*","allowfullscreen":false,"lazyload":false}},"evals":[],"jsHooks":[]}</script>
+<pre class="r"><code>#check out the standard deviation as well
+sapply(dataset[,as.logical(sapply(dataset, class)!=&quot;factor&quot;), with=F], sd)</code></pre>
+<pre><code>##            age       duration       campaign          pdays       previous 
+##     10.4212500    259.2792488      2.7700135    186.9109073      0.4949011 
+##   emp.var.rate cons.price.idx  cons.conf.idx      euribor3m    nr.employed 
+##      1.5709597      0.5788400      4.6281979      1.7344474     72.2515277</code></pre>
+<p>In aboves table, the Turkey method for detecting outliers (everything above 1.5 interquartile range is suspicious) is used to indicate outliers.</p>
+<pre class="r"><code>d&lt;-autoEDA::autoEDA(dataset, removeConstant = F, removeZeroSpread = F, removeMajorityMissing = F, clipOutliers = F)</code></pre>
+<pre><code>## Loading required package: ggplot2</code></pre>
+<pre><code>## Loading required package: RColorBrewer</code></pre>
+<pre><code>## autoEDA | Setting color theme 
+## autoEDA | Cleaning data 
+## autoEDA | Correcting sparse categorical feature levels 
+## autoEDA | Performing univariate analysis 
+## autoEDA | Visualizing data</code></pre>
+<p><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-6-1.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-6-2.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-6-3.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-6-4.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-6-5.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-6-6.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-6-7.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-6-8.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-6-9.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-6-10.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-6-11.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-6-12.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-6-13.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-6-14.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-6-15.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-6-16.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-6-17.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-6-18.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-6-19.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-6-20.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-6-21.png" width="672" /></p>
+<ul>
+<li>campaign: number of contacts done during this campaign, in some people have been contacted lots of times. More often than 6 times are suspected to be outliers, according to both interquartile range indicator as well as usual spread measures. We will create a categorical variable from it, anything more than 5 days becomes a rest bucket.</li>
+</ul>
+<pre class="r"><code>#recode campaign variable
+dataset$campaign&lt;-cut(dataset$campaign, breaks = c(0:6, max(dataset$campaign)), ordered_result = T)</code></pre>
+<ul>
+<li>pdays: number of days past since contact from a previous campaign, the 999 indicator means there has been no previous contact. Again a categorical variable may help. Below, we see the frequency of the days gone by. We see that we can bin the data are at 0-2, 3-4, 5-7, longer than a week, not at all.</li>
+</ul>
+<pre class="r"><code>plotluck::plotluck(dataset[dataset$pdays&lt;999], y~pdays)</code></pre>
+<pre><code>## Warning in grid.Call.graphics(C_polygon, x$x, x$y, index): semi-
+## transparency is not supported on this device: reported only once per page</code></pre>
+<p><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+<pre class="r"><code>#print out frequencies
+table(dataset$pdays)</code></pre>
+<pre><code>## 
+##     0     1     2     3     4     5     6     7     8     9    10    11 
+##    15    26    61   439   118    46   412    60    18    64    52    28 
+##    12    13    14    15    16    17    18    19    20    21    22    25 
+##    58    36    20    24    11     8     7     3     1     2     3     1 
+##    26    27   999 
+##     1     1 39673</code></pre>
+<pre class="r"><code>#recode pdays variable
+dataset$pdays&lt;-cut(dataset$pdays, breaks = c(-1,2, 4, 7, max(dataset$pdays[dataset$pdays!=999]), 999), ordered_result = F)</code></pre>
+<ul>
+<li>previous: number of contacts before the campaign. Usually customers have not been contacted before, according to the counts from aboves plotting. We can instead simplify it and create another categorical indicating contact or not contacted.</li>
+</ul>
+<pre class="r"><code>#recode pdays variable
+dataset$previous&lt;-cut(dataset$previous, breaks = c(-1,0,max(dataset$previous)), ordered_result = F)</code></pre>
+<ul>
+<li>number of credit defaults: has relatively lots of missing values. These may be suspicious / interesting in itself (reporting an existing default may not be desirable from the customers point of view, they should be less likely to buy the product). This potential identifier is corroborated by belows mosaic plot, default status unkown shows much less buyers than the status no default:</li>
+</ul>
+<pre class="r"><code>dataset$default[is.na(dataset$default)]&lt;-&quot;unknown&quot;
+
+plotluck::plotluck(dataset, y~default)</code></pre>
+<pre><code>## Warning in grid.Call.graphics(C_rect, x$x, x$y, x$width, x$height,
+## resolveHJust(x$just, : semi-transparency is not supported on this device:
+## reported only once per page</code></pre>
+<p><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
+<ul>
+<li>duration: in some cases, the call took extraordinarily long, instead of a couple of minutes, it took 30 minutes. We get curious about cases taking longer than say 8 minutes. Also talks taking only a couple of seconds, say less than 10 seconds, are interesting. Both may be decoupled cases, where the phone call alone maybe most important (we do not know the duration &amp; call quality in advance).</li>
+</ul>
+<pre class="r"><code># first print summary stats of too long talks
+summary(dataset[dataset$duration&gt;60*8,])</code></pre>
+<pre><code>##       age                 job           marital    
+##  Min.   :17.00   admin.     :1292   divorced: 574  
+##  1st Qu.:32.00   blue-collar:1224   married :3174  
+##  Median :38.00   technician : 819   single  :1522  
+##  Mean   :40.08   services   : 516   unknown :   0  
+##  3rd Qu.:47.00   management : 365   NA&#39;s    :  18  
+##  Max.   :92.00   (Other)    :1037                  
+##                  NA&#39;s       :  35                  
+##                education       default        housing          loan     
+##  university.degree  :1503   no     :4207   no     :2460   no     :4377  
+##  high.school        :1237   unknown:1081   unknown:   0   unknown:   0  
+##  basic.9y           : 803   yes    :   0   yes    :2709   yes    : 792  
+##  professional.course: 646                  NA&#39;s   : 119   NA&#39;s   : 119  
+##  basic.4y           : 573                                               
+##  (Other)            : 293                                               
+##  NA&#39;s               : 233                                               
+##       contact         month      day_of_week    duration     
+##  cellular :3541   may    :1737   fri: 992    Min.   : 481.0  
+##  telephone:1747   jul    :1115   mon: 996    1st Qu.: 562.0  
+##                   aug    : 627   thu:1175    Median : 678.0  
+##                   jun    : 610   tue: 998    Mean   : 786.3  
+##                   nov    : 510   wed:1127    3rd Qu.: 893.0  
+##                   apr    : 416               Max.   :4918.0  
+##                   (Other): 273                               
+##    campaign         pdays        previous           poutcome   
+##  (0,1] :2164   (-1,2]  :  21   (-1,0]:4574   failure    : 482  
+##  (1,2] :1517   (2,4]   :  70   (0,7] : 714   nonexistent:4574  
+##  (2,3] : 755   (4,7]   :  98                 success    : 232  
+##  (3,4] : 314   (7,27]  :  77                                   
+##  (4,5] : 183   (27,999]:5022                                   
+##  (5,6] : 112                                                   
+##  (6,56]: 243                                                   
+##   emp.var.rate      cons.price.idx  cons.conf.idx      euribor3m    
+##  Min.   :-3.40000   Min.   :92.20   Min.   :-50.80   Min.   :0.634  
+##  1st Qu.:-1.80000   1st Qu.:93.08   1st Qu.:-42.70   1st Qu.:1.334  
+##  Median : 1.10000   Median :93.92   Median :-42.00   Median :4.857  
+##  Mean   : 0.04851   Mean   :93.59   Mean   :-40.78   Mean   :3.562  
+##  3rd Qu.: 1.40000   3rd Qu.:93.99   3rd Qu.:-36.40   3rd Qu.:4.961  
+##  Max.   : 1.40000   Max.   :94.77   Max.   :-26.90   Max.   :5.045  
+##                                                                     
+##   nr.employed     y       
+##  Min.   :4964   no :3110  
+##  1st Qu.:5099   yes:2178  
+##  Median :5191             
+##  Mean   :5164             
+##  3rd Qu.:5228             
+##  Max.   :5228             
+## </code></pre>
+<pre class="r"><code>#then of shorter talks
+summary(dataset[dataset$duration&lt;=60*8,])</code></pre>
+<pre><code>##       age                 job           marital     
+##  Min.   :17.00   admin.     :9130   divorced: 4038  
+##  1st Qu.:32.00   blue-collar:8030   married :21754  
+##  Median :38.00   technician :5924   single  :10046  
+##  Mean   :40.02   services   :3453   unknown :    0  
+##  3rd Qu.:47.00   management :2559   NA&#39;s    :   62  
+##  Max.   :98.00   (Other)    :6509                   
+##                  NA&#39;s       : 295                   
+##                education        default         housing     
+##  university.degree  :10665   no     :28381   no     :16162  
+##  high.school        : 8278   unknown: 7516   unknown:    0  
+##  basic.9y           : 5242   yes    :    3   yes    :18867  
+##  professional.course: 4597                   NA&#39;s   :  871  
+##  basic.4y           : 3603                                  
+##  (Other)            : 2017                                  
+##  NA&#39;s               : 1498                                  
+##       loan            contact          month       day_of_week
+##  no     :29573   cellular :22603   may    :12032   fri:6835   
+##  unknown:    0   telephone:13297   jul    : 6059   mon:7518   
+##  yes    : 5456                     aug    : 5551   thu:7448   
+##  NA&#39;s   :  871                     jun    : 4708   tue:7092   
+##                                    nov    : 3591   wed:7007   
+##                                    apr    : 2216              
+##                                    (Other): 1743              
+##     duration       campaign          pdays         previous    
+##  Min.   :  0.0   (0,1] :15478   (-1,2]  :   81   (-1,0]:30989  
+##  1st Qu.: 93.0   (1,2] : 9053   (2,4]   :  487   (0,7] : 4911  
+##  Median :158.0   (2,3] : 4586   (4,7]   :  420                 
+##  Mean   :180.5   (3,4] : 2337   (7,27]  :  261                 
+##  3rd Qu.:250.0   (4,5] : 1416   (27,999]:34651                 
+##  Max.   :480.0   (5,6] :  867                                  
+##                  (6,56]: 2163                                  
+##         poutcome      emp.var.rate     cons.price.idx  cons.conf.idx   
+##  failure    : 3770   Min.   :-3.4000   Min.   :92.20   Min.   :-50.80  
+##  nonexistent:30989   1st Qu.:-1.8000   1st Qu.:93.08   1st Qu.:-42.70  
+##  success    : 1141   Median : 1.1000   Median :93.44   Median :-41.80  
+##                      Mean   : 0.0868   Mean   :93.57   Mean   :-40.46  
+##                      3rd Qu.: 1.4000   3rd Qu.:93.99   3rd Qu.:-36.40  
+##                      Max.   : 1.4000   Max.   :94.77   Max.   :-26.90  
+##                                                                        
+##    euribor3m      nr.employed     y        
+##  Min.   :0.634   Min.   :4964   no :33438  
+##  1st Qu.:1.344   1st Qu.:5099   yes: 2462  
+##  Median :4.857   Median :5191              
+##  Mean   :3.630   Mean   :5167              
+##  3rd Qu.:4.961   3rd Qu.:5228              
+##  Max.   :5.045   Max.   :5228              
+## </code></pre>
+<p>Here it is striking that for very long phone calls, the proportion of buyers rises appears to rise sharply whilst other variables look the same, so the longer talk alone may be an important reason for buying.<br />
+To look at this, we bin the duration variable and look at how the proportion of buyers tends to increase as the talk takes longer:</p>
+<pre class="r"><code>## bin variables
+
+dataset$bins&lt;-cut(dataset$duration, breaks = 10, ordered_result = T)
+
+plotluck::plotluck(dataset, y~bins)</code></pre>
+<pre><code>## Warning in grid.Call.graphics(C_rect, x$x, x$y, x$width, x$height,
+## resolveHJust(x$just, : semi-transparency is not supported on this device:
+## reported only once per page</code></pre>
+<p><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
+<pre class="r"><code>paste(nrow(dataset[dataset$duration&gt;600,]), &quot;records are above the threshold&quot;)</code></pre>
+<pre><code>## [1] &quot;3464 records are above the threshold&quot;</code></pre>
+<p>Here we see that the probability of buying increases sharply after roundabout talk durations of roundabout 500 seconds.</p>
+<p>Let’s take a look at another indicator, for this we use the isolationForest algorithm. This algorithm takes samples of the data, selects a random feature and then randomly splits the data recursively, until each observation in the sample is isolated. Anomalies tend to be isolated with less splits, which helps to indicate outliers.<br />
+We then take the average number of splits for each observation and look at the lowest p percentile for potential outliers. Below, we use dimensionality reduction (t-sne) on (a sample of) the dataset (excluding the target variable and default, both are kind of special) to plot the potential outliers. We then visually inspect if these outliers in fact are distant to the rest of the data:</p>
+<pre class="r"><code>#first predict the probability to buy using a random forest probability model
+dataset_check&lt;-imputeMissings::impute(dataset)</code></pre>
+<pre><code>## Warning in if (class(x) %in% c(&quot;character&quot;, &quot;factor&quot;)) Mode(x) else if
+## (class(x) %in% : the condition has length &gt; 1 and only the first element
+## will be used</code></pre>
+<pre><code>## Warning in if (class(x) %in% c(&quot;numeric&quot;, &quot;integer&quot;)) median(x, na.rm =
+## TRUE): the condition has length &gt; 1 and only the first element will be used</code></pre>
+<pre><code>## Warning in if (class(x) %in% c(&quot;character&quot;, &quot;factor&quot;)) Mode(x) else if
+## (class(x) %in% : the condition has length &gt; 1 and only the first element
+## will be used</code></pre>
+<pre><code>## Warning in if (class(x) %in% c(&quot;numeric&quot;, &quot;integer&quot;)) median(x, na.rm =
+## TRUE): the condition has length &gt; 1 and only the first element will be used</code></pre>
+<pre class="r"><code>isolation_forest&lt;-isofor::iForest(dataset_check, multicore = T, nt = 128)
+p = predict(isolation_forest, dataset_check)
+col = ifelse(p &gt; quantile(p, 0.98), &quot;outlier&quot;, &quot;ok&quot;)
+
+
+tsne_m&lt;-as.matrix(sapply(dummy::dummy(dplyr::select(dataset_check, -y, -default)), as.numeric))
+ids&lt;-sample(1:nrow(dataset), 1000)
+colours = ifelse(p &gt; quantile(p, 0.98), &quot;red&quot;, &quot;blue&quot;)
+ids_colours&lt;-data.frame(colours)
+ids_red&lt;-which(ids_colours$colours==&quot;red&quot;)
+ids_red_sample&lt;-sample(ids_red, 100)
+
+ids&lt;-unique(c(ids,ids_red_sample))
+tsne_m&lt;-tsne_m[ids,]
+dataset_tsne&lt;-tsne::tsne(tsne_m)</code></pre>
+<pre><code>## sigma summary: Min. : 0.492154827713713 |1st Qu. : 0.613158308911389 |Median : 0.66333766728833 |Mean : 0.679740743889377 |3rd Qu. : 0.718913423261014 |Max. : 1.01872040967581 |</code></pre>
+<pre><code>## Epoch: Iteration #100 error is: 18.8882777938789</code></pre>
+<pre><code>## Epoch: Iteration #200 error is: 1.40070645354746</code></pre>
+<pre><code>## Epoch: Iteration #300 error is: 1.23148325874779</code></pre>
+<pre><code>## Epoch: Iteration #400 error is: 1.16911608417121</code></pre>
+<pre><code>## Epoch: Iteration #500 error is: 1.15121809743977</code></pre>
+<pre><code>## Epoch: Iteration #600 error is: 1.14407212852325</code></pre>
+<pre><code>## Epoch: Iteration #700 error is: 1.14056765596769</code></pre>
+<pre><code>## Epoch: Iteration #800 error is: 1.1385994438743</code></pre>
+<pre><code>## Epoch: Iteration #900 error is: 1.13719727186154</code></pre>
+<pre><code>## Epoch: Iteration #1000 error is: 1.13640434424936</code></pre>
+<pre class="r"><code>#reload previous results
+load(&quot;/home/knut/Documents/blog-tranq/content/post/data/isofor_results.Rdata&quot;)
+
+colours&lt;-colours[ids]
+plot(dataset_tsne[,1], dataset_tsne[,2], col=colours, pch=colours)</code></pre>
+<p><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-13-1.png" width="672" /></p>
+<p>These records tend to be in a slightly less concentrated area of the records, not really far of. They are more extreme values not strictly speaking outliers. Now we want to know, if and how these more extreme records differ from the rest. So we do a little EDA on this subset, to better understand these records.</p>
+<p>We observe, that:<br />
+- they are proportionally seen more frequently retired then people from the overall dataset<br />
+- The age distribution also contains more elderly people<br />
+- The outcome of previous marketing campaigns is much more likely to be a success - They are more likely to subscribe to the deposit (remarkably, since this variable was excluded from training isolation forest)</p>
+<p>Below two times the distributions for those marked as potential outliers and those who are not marked as outliers:</p>
+<p>Outliers:</p>
+<pre class="r"><code>look_df&lt;-dataset_check[col==&quot;outlier&quot;,]
+
+d&lt;-autoEDA::autoEDA(look_df, removeConstant = F, removeZeroSpread = F, removeMajorityMissing = F, clipOutliers = F)</code></pre>
+<pre><code>## autoEDA | Setting color theme 
+## autoEDA | Cleaning data 
+## autoEDA | Correcting sparse categorical feature levels 
+## autoEDA | Performing univariate analysis 
+## autoEDA | Visualizing data</code></pre>
+<p><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-14-1.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-14-2.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-14-3.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-14-4.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-14-5.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-14-6.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-14-7.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-14-8.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-14-9.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-14-10.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-14-11.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-14-12.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-14-13.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-14-14.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-14-15.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-14-16.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-14-17.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-14-18.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-14-19.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-14-20.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-14-21.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-14-22.png" width="672" /></p>
+<p>Non-Outliers:</p>
+<pre class="r"><code>look_df&lt;-dataset_check[col==&quot;ok&quot;,]
+
+
+d&lt;-autoEDA::autoEDA(look_df, removeConstant = F, removeZeroSpread = F, removeMajorityMissing = F, clipOutliers = F)</code></pre>
+<pre><code>## autoEDA | Setting color theme 
+## autoEDA | Cleaning data 
+## autoEDA | Correcting sparse categorical feature levels 
+## autoEDA | Performing univariate analysis 
+## autoEDA | Visualizing data</code></pre>
+<p><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-15-1.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-15-2.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-15-3.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-15-4.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-15-5.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-15-6.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-15-7.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-15-8.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-15-9.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-15-10.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-15-11.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-15-12.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-15-13.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-15-14.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-15-15.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-15-16.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-15-17.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-15-18.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-15-19.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-15-20.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-15-21.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-15-22.png" width="672" /></p>
+<p>What about administratively employed ones? Are there any stricking differences for those?</p>
+<p>It appears, that the previous campaign was also more likely to be a success and they are also older than usual:</p>
+<p>Outliers:</p>
+<pre class="r"><code>look_df&lt;-dataset_check[col==&quot;outlier&quot;,]
+
+d&lt;-autoEDA::autoEDA(look_df[look_df$job==&quot;admin.&quot;,], removeConstant = F, removeZeroSpread = F, removeMajorityMissing = F, clipOutliers = F)</code></pre>
+<pre><code>## autoEDA | Setting color theme 
+## autoEDA | Cleaning data 
+## autoEDA | Correcting sparse categorical feature levels 
+## autoEDA | Performing univariate analysis 
+## autoEDA | Visualizing data</code></pre>
+<p><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-16-1.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-16-2.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-16-3.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-16-4.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-16-5.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-16-6.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-16-7.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-16-8.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-16-9.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-16-10.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-16-11.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-16-12.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-16-13.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-16-14.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-16-15.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-16-16.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-16-17.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-16-18.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-16-19.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-16-20.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-16-21.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-16-22.png" width="672" /></p>
+<p>Non-outliers:</p>
+<pre class="r"><code>look_df&lt;-dataset_check[col==&quot;ok&quot;,]
+
+d&lt;-autoEDA::autoEDA(look_df[look_df$job==&quot;admin.&quot;,], removeConstant = F, removeZeroSpread = F, removeMajorityMissing = F, clipOutliers = F)</code></pre>
+<pre><code>## autoEDA | Setting color theme 
+## autoEDA | Cleaning data 
+## autoEDA | Correcting sparse categorical feature levels 
+## autoEDA | Performing univariate analysis 
+## autoEDA | Visualizing data</code></pre>
+<p><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-17-1.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-17-2.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-17-3.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-17-4.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-17-5.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-17-6.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-17-7.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-17-8.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-17-9.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-17-10.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-17-11.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-17-12.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-17-13.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-17-14.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-17-15.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-17-16.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-17-17.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-17-18.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-17-19.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-17-20.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-17-21.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-17-22.png" width="672" /></p>
+<p>Overall, these more extreme records are interesting cases showing some interesting prospects for the telemarketing campaign, because they are may be likely to have relatively large amounts of savings to deposit, but they do not qualify as real outliers.</p>
+<p>However, we saw a few records with extraordinary long duration.<br />
+We now explore outlier thresholds by looking at the relation of duration &amp; education:</p>
+<pre class="r"><code>ggplot(dataset, aes(y=duration, x=as.factor(education))) + geom_violin(stat=&quot;ydensity&quot;, position=&quot;dodge&quot;, alpha=1, trim=TRUE, scale=&quot;area&quot;) + geom_boxplot(stat=&quot;boxplot&quot;, position=&quot;dodge&quot;, alpha=1, width=0.2) + theme_bw() + theme(text=element_text(family=&quot;sans&quot;, face=&quot;plain&quot;, color=&quot;#000000&quot;, size=15, hjust=0.5, vjust=0.5)) + xlab(&quot;job&quot;) + ylab(&quot;duration&quot;)</code></pre>
+<p><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-18-1.png" width="672" /> Based on this plot, we take durations longer than 2500 seconds as clear outliers.</p>
+<p>Below we see several conditional outliers, people who are retired and very young are rare, as well as individuals with jobs in a very high age. We take retired people younger than 35 as outliers and non-retired people older than 75 years as outliers.</p>
+<pre class="r"><code>ggplot(dataset_check, aes(y=age, x=as.factor(job))) + geom_boxplot(aes(fill=as.factor(job)), stat=&quot;boxplot&quot;, position=&quot;dodge&quot;, alpha=1, width=0.2) + theme_bw() + theme(text=element_text(family=&quot;sans&quot;, face=&quot;plain&quot;, color=&quot;#000000&quot;, size=15, hjust=0.5, vjust=0.5), axis.text.x=element_text(angle = 90, vjust = 0.05)) + guides(fill=guide_legend(title=&quot;job&quot;)) + xlab(&quot;job&quot;) + ylab(&quot;age&quot;)+coord_flip()</code></pre>
+<p><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-19-1.png" width="672" /></p>
+<p>Now lets exclude these outliers from further analysis:</p>
+<pre class="r"><code>#Exclude outliers  according to duration
+dataset&lt;-dataset[dataset$duration&lt;2500,]
+dataset&lt;-dataset[(dataset$job==&quot;retired&quot; &amp; dataset$age&lt;=35)==F,]
+dataset&lt;-dataset[(dataset$job!=&quot;retired&quot; &amp; dataset$age&gt;=75)==F,]</code></pre>
+<p>Now lets deal with the missing values.<br />
+Below a figure about percentage missing:</p>
+<pre class="r"><code>DataExplorer::plot_missing(dataset)</code></pre>
+<p><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-21-1.png" width="672" /></p>
+<p>There are not that many missing values.<br />
+The approach here is model based, using random forests. For each variable, random forests are fit &amp; used to predict the missing values, until a user specified number of ieterations is reached or until estimated imputation error increases.</p>
+<pre class="r"><code>set.seed(43)
+#get rid of unneded unknown factor levels
+dataset&lt;-droplevels(dataset)
+
+#we wont use the duration variable as it is unknown during prediction
+
+dataset&lt;-dplyr::select(dataset, -duration, -bins)
+
+#takes some time so reload earlier results
+# dataset_rf_imp&lt;-missRanger::missRanger(dataset, num.trees=500, verbose = 2)
+
+load(&quot;/home/knut/Documents/blog-tranq/content/post/data/rf_imp.Rdata&quot;)
+
+dataset&lt;-dataset_rf_imp</code></pre>
+</div>
+<div id="advanced-exploratory-data-analysis-feature-engineering" class="section level3">
+<h3>Advanced exploratory data analysis &amp; feature engineering</h3>
+<p>Now that we have a cleaned up dataset, we want to see if we can create more effective features by learning more about the data.<br />
+Again, random forests can help us to spot the most interesting patterns in the data. Below we calculate the variable importance in a random forest model to spot most important predictors:</p>
+<pre class="r"><code>rf_importances&lt;-ranger::ranger(dependent.variable.name = &quot;y&quot;, data = dataset, importance = &quot;permutation&quot;, num.trees = 128)
+
+variable_importances&lt;-data.frame(permutation_importance=rf_importances$variable.importance)
+variable_importances$variable&lt;-rownames(variable_importances)
+variable_importances&lt;-dplyr::arrange(variable_importances, desc(permutation_importance))
+
+#plot the variable importance
+plotluck::plotluck(variable_importances, permutation_importance~variable)</code></pre>
+<p><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-23-1.png" width="672" /></p>
+<p>As we can see, the newly added social and economic context variables are very important. The euribor interest rate of banks lending money to each other is likely to influence the interest the customer can recieve when buying the bank product / the term deposit, as do the consumer price index and employment rate.<br />
+These variables both mean welfare of the individual (having the money for the term deposit) &amp; good economic conditions.</p>
+<p>This let’s us suspect, that some variables tied to individual socio-economic status (job, marital, education, housing loan, personal loan, age) can be used in combination to more clearly indicate wealth or non wealth. If we segment / cluster these datapoints into groups, we might find individuals being part of higher or lower socio-economic classes. Let’s try it out.<br />
+An easy way to do this is to create an extra label for groups of higher and lower socio economic status. Also we remember, that we found extreme values for retired people and older people with administrative jobs. So we give those a special code, too, they are the easy targets. The relation is corroborated by belows plot:</p>
+<pre class="r"><code>dataset$socio_eco&lt;-&quot;unknown&quot;
+dataset[dataset$job%in%c(&quot;student&quot;, &quot;unemployed&quot;, &quot;self-employed&quot;, &quot;services&quot;),&quot;socio_eco&quot;]&lt;-&quot;disadvantaged&quot;
+dataset[dataset$age&gt;=30&amp;dataset$job%in%c(&quot;blue-collar&quot;, &quot;technician&quot;, &quot;entrepreneur&quot;, &quot;management&quot;),&quot;socio_eco&quot;]&lt;-&quot;advantaged&quot;
+dataset[dataset$job%in%c(&quot;housemaid&quot;, &quot;unemployed&quot;, &quot;services&quot;),&quot;socio_eco&quot;]&lt;-&quot;disadvantaged&quot;
+dataset[dataset$age&gt;=30&amp;dataset$education%in%c(&quot;professional.course&quot;, &quot;university.degree&quot;, &quot;high.school&quot;)==F,&quot;socio_eco&quot;]&lt;-&quot;disadvantaged&quot;
+dataset$socio_eco&lt;-as.factor(dataset$socio_eco)
+
+
+dataset$older_prospects&lt;-&quot;rest&quot;
+dataset[dataset$job==&quot;retired&quot;&amp;dataset$poutcome==&quot;success&quot; &amp; dataset$age&gt;=40,&quot;older_prospects&quot;]&lt;-&quot;easy_target&quot;
+dataset[dataset$job==&quot;admin.&quot;&amp;dataset$poutcome==&quot;success&quot; &amp; dataset$age&gt;=40,&quot;older_prospects&quot;]&lt;-&quot;easy_target&quot;
+
+dataset$older_prospects&lt;-as.factor(dataset$older_prospects)
+
+plotluck::plotluck(dataset, y~older_prospects)</code></pre>
+<pre><code>## Warning in grid.Call.graphics(C_rect, x$x, x$y, x$width, x$height,
+## resolveHJust(x$just, : semi-transparency is not supported on this device:
+## reported only once per page</code></pre>
+<p><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-24-1.png" width="672" /></p>
+<p>Next to making up a segmentation ourselves, we also want to use a data-driven approach. We would like to cluster the data according to these demographic variables about the bank client, to segment the customers into similar groups. The number of available variables for customer segmentation is limited, so this will be mostly just for fun and to improve the algorithm by finding bigger patterns.<br />
+There are several approaches towards this, one including one-hot encoding and then using distance measures as input for standard cluster algorithms like k-means. But that would be boring.</p>
+<div id="customer2vec" class="section level4">
+<h4>Customer2Vec</h4>
+<p>Here we want to try out something else: Clustering based on “customer identity embeddings”. We use all the categorical data from the bank client (and making the age variable categorical by binning into 5 year groups as well) as input for the word2vec algorithm. This algorithm is usually used to compute meaning representing numerical vectors of documents (doc2vec) or word semantics (word2vec) by predicting word context with a neural network (everyone knows the qoute: “You shall know a word by the company it keeps”). Instead, we use all categorical data to artificially create a text variable containing the categories, train a doc2vec using the customer records as document cases and then compute the clusters based on this bank client identity reflecting data: Customer identities are described by typical demographics. Just like words, customer identity can be seen as embedded in their socio-economic, demographic and psychographic contexts. Customer2vec tries to predict the personal markup context variables sourrounding each other (skipgram model) and maps identity onto a vector space.<br />
+Example: The model sees a customer is of age 25 and tries predict occupation, if she has a housing loan etc. It also tries to predict the age and if she has a housing loan based on occupation. Then the final layer of the neural network is cut off and the raw vectors before the final predicting transformation is extracted:</p>
+<div class="figure">
+<img src="data/customer2vec.png" alt="Customer2vec" />
+<p class="caption">Customer2vec</p>
+</div>
+<p>We use those to infer a couple of the customer identities / personas underlying dimensions automatically and use the customer2vec as input for a clustering algorithm.<br />
+Finallly, to interpret these clusters, we fit both usual decision trees as well as conditional inference trees (which avoid the variable selection bias of normal trees towards categories with lots of values, using permutation tests instead of impurity measures). These help us to describe what kind of people are found in the groups.</p>
+<pre class="r"><code>#select customer identity related columns
+socio_economic_vars&lt;-dplyr::select(dataset, job, marital, education, loan, housing)
+socio_economic_vars$age&lt;-cut(dataset$age, seq(from = 0, to = 100, by=5))
+socio_economic_vars&lt;-as.data.frame(socio_economic_vars)
+
+#unite colnames and factor levels
+for (i in 1:ncol(socio_economic_vars)){
+  socio_economic_vars[,i]&lt;-as.factor(paste(colnames(socio_economic_vars)[i], socio_economic_vars[,i], sep = &quot;_&quot;))
+  
+}
+
+socio_economic_vars_embeddings&lt;-tidyr::unite(socio_economic_vars, all, job:age, sep=&quot; &quot;)
+
+
+# create file for word2vec
+# add document / customer id tokens
+texts &lt;- as.character(paste0(&quot;禪&quot;, 1:nrow(socio_economic_vars_embeddings), &quot; &quot;, socio_economic_vars_embeddings$all))
+tmp_file_txt &lt;- tempfile()
+tmp_file_model &lt;- tempfile()
+writeLines(text = texts, con = tmp_file_txt)
+
+#train customer identity embeddings
+model = wordVectors::train_word2vec(tmp_file_txt, paste0(tmp_file_model, &quot;clean.bin&quot;), vectors=10,threads=4,window=50,iter=80, negative_samples=0, min_count = 1, force = T, cbow = 0)</code></pre>
+<pre><code>## Starting training using file /tmp/RtmpARaQtE/file4e582a6b2ca
+## 100K
+200K
+300K
+Vocab size: 41086
+## Words in train file: 328344</code></pre>
+<pre><code>## Filename ends with .bin, so reading in binary format</code></pre>
+<pre><code>## Reading a word2vec binary file of 41086 rows and 10 columns</code></pre>
+<pre><code>## 
+  |                                                                       
+  |                                                                 |   0%
+  |                                                                       
+  |                                                                 |   1%
+  |                                                                       
+  |=                                                                |   1%
+  |                                                                       
+  |=                                                                |   2%
+  |                                                                       
+  |==                                                               |   2%
+  |                                                                       
+  |==                                                               |   3%
+  |                                                                       
+  |==                                                               |   4%
+  |                                                                       
+  |===                                                              |   4%
+  |                                                                       
+  |===                                                              |   5%
+  |                                                                       
+  |====                                                             |   5%
+  |                                                                       
+  |====                                                             |   6%
+  |                                                                       
+  |====                                                             |   7%
+  |                                                                       
+  |=====                                                            |   7%
+  |                                                                       
+  |=====                                                            |   8%
+  |                                                                       
+  |======                                                           |   8%
+  |                                                                       
+  |======                                                           |   9%
+  |                                                                       
+  |======                                                           |  10%
+  |                                                                       
+  |=======                                                          |  10%
+  |                                                                       
+  |=======                                                          |  11%
+  |                                                                       
+  |=======                                                          |  12%
+  |                                                                       
+  |========                                                         |  12%
+  |                                                                       
+  |========                                                         |  13%
+  |                                                                       
+  |=========                                                        |  13%
+  |                                                                       
+  |=========                                                        |  14%
+  |                                                                       
+  |=========                                                        |  15%
+  |                                                                       
+  |==========                                                       |  15%
+  |                                                                       
+  |==========                                                       |  16%
+  |                                                                       
+  |===========                                                      |  16%
+  |                                                                       
+  |===========                                                      |  17%
+  |                                                                       
+  |===========                                                      |  18%
+  |                                                                       
+  |============                                                     |  18%
+  |                                                                       
+  |============                                                     |  19%
+  |                                                                       
+  |=============                                                    |  19%
+  |                                                                       
+  |=============                                                    |  20%
+  |                                                                       
+  |=============                                                    |  21%
+  |                                                                       
+  |==============                                                   |  21%
+  |                                                                       
+  |==============                                                   |  22%
+  |                                                                       
+  |===============                                                  |  22%
+  |                                                                       
+  |===============                                                  |  23%
+  |                                                                       
+  |===============                                                  |  24%
+  |                                                                       
+  |================                                                 |  24%
+  |                                                                       
+  |================                                                 |  25%
+  |                                                                       
+  |=================                                                |  25%
+  |                                                                       
+  |=================                                                |  26%
+  |                                                                       
+  |=================                                                |  27%
+  |                                                                       
+  |==================                                               |  27%
+  |                                                                       
+  |==================                                               |  28%
+  |                                                                       
+  |===================                                              |  28%
+  |                                                                       
+  |===================                                              |  29%
+  |                                                                       
+  |===================                                              |  30%
+  |                                                                       
+  |====================                                             |  30%
+  |                                                                       
+  |====================                                             |  31%
+  |                                                                       
+  |====================                                             |  32%
+  |                                                                       
+  |=====================                                            |  32%
+  |                                                                       
+  |=====================                                            |  33%
+  |                                                                       
+  |======================                                           |  33%
+  |                                                                       
+  |======================                                           |  34%
+  |                                                                       
+  |======================                                           |  35%
+  |                                                                       
+  |=======================                                          |  35%
+  |                                                                       
+  |=======================                                          |  36%
+  |                                                                       
+  |========================                                         |  36%
+  |                                                                       
+  |========================                                         |  37%
+  |                                                                       
+  |========================                                         |  38%
+  |                                                                       
+  |=========================                                        |  38%
+  |                                                                       
+  |=========================                                        |  39%
+  |                                                                       
+  |==========================                                       |  39%
+  |                                                                       
+  |==========================                                       |  40%
+  |                                                                       
+  |==========================                                       |  41%
+  |                                                                       
+  |===========================                                      |  41%
+  |                                                                       
+  |===========================                                      |  42%
+  |                                                                       
+  |============================                                     |  42%
+  |                                                                       
+  |============================                                     |  43%
+  |                                                                       
+  |============================                                     |  44%
+  |                                                                       
+  |=============================                                    |  44%
+  |                                                                       
+  |=============================                                    |  45%
+  |                                                                       
+  |==============================                                   |  45%
+  |                                                                       
+  |==============================                                   |  46%
+  |                                                                       
+  |==============================                                   |  47%
+  |                                                                       
+  |===============================                                  |  47%
+  |                                                                       
+  |===============================                                  |  48%
+  |                                                                       
+  |================================                                 |  48%
+  |                                                                       
+  |================================                                 |  49%
+  |                                                                       
+  |================================                                 |  50%
+  |                                                                       
+  |=================================                                |  50%
+  |                                                                       
+  |=================================                                |  51%
+  |                                                                       
+  |=================================                                |  52%
+  |                                                                       
+  |==================================                               |  52%
+  |                                                                       
+  |==================================                               |  53%
+  |                                                                       
+  |===================================                              |  53%
+  |                                                                       
+  |===================================                              |  54%
+  |                                                                       
+  |===================================                              |  55%
+  |                                                                       
+  |====================================                             |  55%
+  |                                                                       
+  |====================================                             |  56%
+  |                                                                       
+  |=====================================                            |  56%
+  |                                                                       
+  |=====================================                            |  57%
+  |                                                                       
+  |=====================================                            |  58%
+  |                                                                       
+  |======================================                           |  58%
+  |                                                                       
+  |======================================                           |  59%
+  |                                                                       
+  |=======================================                          |  59%
+  |                                                                       
+  |=======================================                          |  60%
+  |                                                                       
+  |=======================================                          |  61%
+  |                                                                       
+  |========================================                         |  61%
+  |                                                                       
+  |========================================                         |  62%
+  |                                                                       
+  |=========================================                        |  62%
+  |                                                                       
+  |=========================================                        |  63%
+  |                                                                       
+  |=========================================                        |  64%
+  |                                                                       
+  |==========================================                       |  64%
+  |                                                                       
+  |==========================================                       |  65%
+  |                                                                       
+  |===========================================                      |  65%
+  |                                                                       
+  |===========================================                      |  66%
+  |                                                                       
+  |===========================================                      |  67%
+  |                                                                       
+  |============================================                     |  67%
+  |                                                                       
+  |============================================                     |  68%
+  |                                                                       
+  |=============================================                    |  68%
+  |                                                                       
+  |=============================================                    |  69%
+  |                                                                       
+  |=============================================                    |  70%
+  |                                                                       
+  |==============================================                   |  70%
+  |                                                                       
+  |==============================================                   |  71%
+  |                                                                       
+  |==============================================                   |  72%
+  |                                                                       
+  |===============================================                  |  72%
+  |                                                                       
+  |===============================================                  |  73%
+  |                                                                       
+  |================================================                 |  73%
+  |                                                                       
+  |================================================                 |  74%
+  |                                                                       
+  |================================================                 |  75%
+  |                                                                       
+  |=================================================                |  75%
+  |                                                                       
+  |=================================================                |  76%
+  |                                                                       
+  |==================================================               |  76%
+  |                                                                       
+  |==================================================               |  77%
+  |                                                                       
+  |==================================================               |  78%
+  |                                                                       
+  |===================================================              |  78%
+  |                                                                       
+  |===================================================              |  79%
+  |                                                                       
+  |====================================================             |  79%
+  |                                                                       
+  |====================================================             |  80%
+  |                                                                       
+  |====================================================             |  81%
+  |                                                                       
+  |=====================================================            |  81%
+  |                                                                       
+  |=====================================================            |  82%
+  |                                                                       
+  |======================================================           |  82%
+  |                                                                       
+  |======================================================           |  83%
+  |                                                                       
+  |======================================================           |  84%
+  |                                                                       
+  |=======================================================          |  84%
+  |                                                                       
+  |=======================================================          |  85%
+  |                                                                       
+  |========================================================         |  85%
+  |                                                                       
+  |========================================================         |  86%
+  |                                                                       
+  |========================================================         |  87%
+  |                                                                       
+  |=========================================================        |  87%
+  |                                                                       
+  |=========================================================        |  88%
+  |                                                                       
+  |==========================================================       |  88%
+  |                                                                       
+  |==========================================================       |  89%
+  |                                                                       
+  |==========================================================       |  90%
+  |                                                                       
+  |===========================================================      |  90%
+  |                                                                       
+  |===========================================================      |  91%
+  |                                                                       
+  |===========================================================      |  92%
+  |                                                                       
+  |============================================================     |  92%
+  |                                                                       
+  |============================================================     |  93%
+  |                                                                       
+  |=============================================================    |  93%
+  |                                                                       
+  |=============================================================    |  94%
+  |                                                                       
+  |=============================================================    |  95%
+  |                                                                       
+  |==============================================================   |  95%
+  |                                                                       
+  |==============================================================   |  96%
+  |                                                                       
+  |===============================================================  |  96%
+  |                                                                       
+  |===============================================================  |  97%
+  |                                                                       
+  |===============================================================  |  98%
+  |                                                                       
+  |================================================================ |  98%
+  |                                                                       
+  |================================================================ |  99%
+  |                                                                       
+  |=================================================================|  99%
+  |                                                                       
+  |=================================================================| 100%</code></pre>
+<pre class="r"><code>load(&quot;/home/knut/Documents/blog-tranq/content/post/data/customer2vec.Rdata&quot;)
+#extract customer identity vectors &amp; demographics vectors (like doc2vec)
+customer_identity_vectors&lt;-model[stringr::str_detect(rownames(model), &quot;禪.*&quot;),]
+demographics_vectors&lt;-model[stringr::str_detect(rownames(model), &quot;禪.*&quot;)==F,]
+
+
+# as an example we print out the first demographic token vectors
+demographics_vectors</code></pre>
+<pre><code>## A VectorSpaceModel object of  43  words and  10  vectors
+##                                   [,1]         [,2]        [,3]
+## &lt;/s&gt;                        0.04002685  0.044194032 -0.03830261
+## loan_no                     0.34688768  0.005162999  0.12832542
+## marital_married             0.25749576  0.005516019  0.04771777
+## housing_yes                 0.53247583 -0.107935220  0.04845403
+## housing_no                  0.51814562 -0.091694616  0.04316331
+## education_university.degree 0.33383828 -0.005767514  0.49119624
+## marital_single              0.21547350 -0.027898515  0.03325222
+## job_admin.                  0.56871468 -0.027769530  0.06806763
+## education_high.school       0.36957595 -0.050990377  0.47290632
+## job_blue-collar             0.48567551 -0.035549603  0.08111460
+##                                    [,4]        [,5]         [,6]
+## &lt;/s&gt;                        -0.03278046  0.01366577  0.030210877
+## loan_no                     -0.30052209 -0.36382678 -0.014642374
+## marital_married             -0.35029161 -0.28715092 -0.094123088
+## housing_yes                 -0.29546979 -0.20924310  0.006991587
+## housing_no                  -0.30156186 -0.19354284  0.004767729
+## education_university.degree -0.24647343 -0.13843359  0.149958000
+## marital_single              -0.01956342 -0.36465833 -0.319180667
+## job_admin.                  -0.14684051 -0.30663663  0.441602767
+## education_high.school       -0.19643238  0.02156339  0.207386881
+## job_blue-collar             -0.46024480 -0.08132243  0.534494221
+## attr(,&quot;.cache&quot;)
+## &lt;environment: 0x7447428&gt;</code></pre>
+</div>
+<div id="finding-a-good-k-for-customer-segmentation" class="section level4">
+<h4>Finding a good k for Customer Segmentation</h4>
+<p>So now we have calculated our customer identity vectors and want to use them to identify meaningful structure about who the banks customers are. We will use the well-known elbow method to determine the number of clusters. For this we look at the total within-clusters sum of square (a measure how little the variation is within all clusters) and seek an elbow in the plot (this balances how alike the records are per cluster vs. how many clusters are needed to minimize the intra cluster variation). Below we see the elbow is at a k of 3.</p>
+<pre class="r"><code># Compute and plot wss for k = 2 to k = 15
+k.max &lt;- 15 # Maximal number of clusters
+data &lt;- customer_identity_vectors
+wss &lt;- sapply(1:k.max, 
+        function(k){kmeans(data, k, nstart=10 )$tot.withinss})</code></pre>
+<pre><code>## Warning: did not converge in 10 iterations
+
+## Warning: did not converge in 10 iterations</code></pre>
+<pre><code>## Warning: Quick-TRANSfer stage steps exceeded maximum (= 2052150)
+
+## Warning: Quick-TRANSfer stage steps exceeded maximum (= 2052150)</code></pre>
+<pre><code>## Warning: did not converge in 10 iterations
+
+## Warning: did not converge in 10 iterations</code></pre>
+<pre class="r"><code>plot(1:k.max, wss,
+       type=&quot;b&quot;, pch = 19, frame = FALSE, 
+       xlab=&quot;Number of clusters K&quot;,
+       ylab=&quot;Total within-clusters sum of squares&quot;)
+abline(v = 3, lty =2)</code></pre>
+<p><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-26-1.png" width="672" /></p>
+<p>This is also corroborated when we look at (a sample) of the data itself.<br />
+Below we have a two dimensional projection of the customer identity embeddings, one can see that to the left and the right and somewhere in the middle, the datapoints (here just the rownames from the customer embeddings) are more dense. We could also opt for say 4 or 5 clusters, but to keep things simple we go for 3.</p>
+<pre class="r"><code>clusters&lt;-kmeans(customer_identity_vectors, 3)
+
+#sample data to plot clusters in overview
+
+sample_nrs&lt;-sample(1:nrow(customer_identity_vectors), 300)
+
+
+load(&quot;/home/knut/Documents/blog-tranq/content/post/data/clusters.Rdata&quot;)
+
+#something goes wrong  rendering this plot, so I use a picture  of it instead
+#cluster::clusplot(main=&quot;Two dimensional reduction of k-means clustering with k=3 using PCA&quot;, customer_identity_vectors[sample_nrs,], clusters$cluster[sample_nrs], color=TRUE, shade=TRUE,labels=2, lines=0)</code></pre>
+<div class="figure">
+<img src="data/clusterplot.png" alt="clusterplot" />
+<p class="caption">clusterplot</p>
+</div>
+</div>
+<div id="decision-trees-categorical-demographic-similarities-for-cluster-interpretation" class="section level4">
+<h4>Decision trees &amp; categorical demographic similarities for cluster interpretation</h4>
+<p>Now that we have three customer segments, we would like to learn about their identity. To do so, we fit two decision tree models to take a look at the most important differentiators for these three clusters. Note that in belows tree, some of the category levels had to be abbreviated. bsc stands for basic school, not a bachelors degree.</p>
+<pre class="r"><code>#create dataframe for decision trees with original demographic variables
+socio_economic_vars_cl&lt;-dplyr::bind_cols(socio_economic_vars, data.frame(clusters=factor(clusters$cluster)))
+
+#fit and plot decision trees
+decision_tree&lt;-rpart::rpart(clusters~., data = socio_economic_vars_cl, control=rpart::rpart.control(maxdepth=4), method = &quot;class&quot;)
+
+load(&quot;/home/knut/Documents/blog-tranq/content/post/data/decisiontree.Rdata&quot;)
+rpart.plot::rpart.plot(decision_tree, tweak = 2, faclen=12)</code></pre>
+<p><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-28-1.png" width="672" /></p>
+<pre class="r"><code>#fit and plot conditional inference trees
+cond_inf_tree&lt;-partykit::ctree(clusters~., data = socio_economic_vars_cl, control = partykit::ctree_control(maxdepth = 3))
+
+load(&quot;/home/knut/Documents/blog-tranq/content/post/data/cond_inf_tree.Rdata&quot;)
+library(partykit)</code></pre>
+<pre><code>## Loading required package: grid</code></pre>
+<pre><code>## Loading required package: libcoin</code></pre>
+<pre><code>## Loading required package: mvtnorm</code></pre>
+<pre class="r"><code>plot(cond_inf_tree, gp = gpar(fontsize = 8), srt=85,  
+inner_panel=node_inner, ep_args = list(justmin = 10),
+ip_args=list(
+abbreviate = F,
+id = FALSE)
+)</code></pre>
+<p><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-29-1.png" width="672" /></p>
+<p>Looking at the “usual” decision tree, we see that 32% less educated customers have a predicted membership in cluster 1, and sometimes have lower middle class jobs. 23 % of the customers have other (higher) education backgrounds and are singles, being predicted to be in cluster 2, being adults. 33 % of the customers have married at some point and are most likely over 30 years old and have other jobs than lower middle class jobs, with predicted cluster 3 membership.</p>
+<p>The important role of education as differentiator amongst the customers is corroborated by the second decision tree algorithm. People in cluster 1 tend to have marriage background and jobs from a broader spectrum with lower educational background. Cluster 2 people have higher education, have been married and have middle class jobs. Cluster 3 consists out of single, young people, young adults and adults with higher educational background.</p>
+<p>The picture emerging is that of<br />
+- uneducated singles or (divorced) couples in cluster 3 with lower middle class jobs<br />
+- (young) single adults with a degree including blue collar workers and students in cluster 2<br />
+- higher educated individuals with marriage background and (upper) middle class jobs in cluster 3</p>
+<p>Additionally, we can look at what other attributes are associated with the clusters. We can use both the customer identity embeddings as well as the socio-demographics embeddings to learn more about what traits describe certain kinds of customers.<br />
+Let’s first look at the clusters. Like for word embeddings, we can just calculate the cosine similarity between the demographics labels and others or the mean vectors of each cluster.</p>
+<pre class="r"><code>#first calculate mean customer id vectors
+library(wordVectors)
+mean_cluster_1_al_bundies_and_peggies&lt;-as.VectorSpaceModel(t(matrix(colMeans(customer_identity_vectors[clusters$cluster==1,]))))
+
+mean_cluster_3_blakes_workaholics_jds_scrubs&lt;-as.VectorSpaceModel(t(matrix(colMeans(customer_identity_vectors[clusters$cluster==2,]))))
+
+mean_cluster_2_walter_whites_breaking_bad&lt;-as.VectorSpaceModel(t(matrix(colMeans(customer_identity_vectors[clusters$cluster==3,]))))
+
+
+#then calculate socio-demo category labels similarities
+
+al_bundies_socio_demo_associations&lt;-data.frame(similarity=t(as.data.frame(cosineSimilarity(mean_cluster_1_al_bundies_and_peggies, demographics_vectors))))
+al_bundies_socio_demo_associations$socio_demo_category&lt;-rownames(al_bundies_socio_demo_associations)
+
+
+jds_socio_demo_associations&lt;-data.frame(similarity=t(as.data.frame(cosineSimilarity(mean_cluster_3_blakes_workaholics_jds_scrubs, demographics_vectors))))
+jds_socio_demo_associations$socio_demo_category&lt;-rownames(jds_socio_demo_associations)
+
+
+walter_whites_socio_demo_associations&lt;-data.frame(similarity=t(as.data.frame(cosineSimilarity(mean_cluster_2_walter_whites_breaking_bad, demographics_vectors))))
+walter_whites_socio_demo_associations$socio_demo_category&lt;-rownames(walter_whites_socio_demo_associations)
+
+
+
+htmlTable(dplyr::select(dplyr::arrange(al_bundies_socio_demo_associations, desc(similarity)), socio_demo_category, similarity))</code></pre>
+<table class="gmisc_table" style="border-collapse: collapse; margin-top: 1em; margin-bottom: 1em;">
+<thead>
+<tr>
+<th style="border-bottom: 1px solid grey; border-top: 2px solid grey;">
+</th>
+<th style="border-bottom: 1px solid grey; border-top: 2px solid grey; text-align: center;">
+socio_demo_category
+</th>
+<th style="border-bottom: 1px solid grey; border-top: 2px solid grey; text-align: center;">
+similarity
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">
+1
+</td>
+<td style="text-align: center;">
+education_illiterate
+</td>
+<td style="text-align: center;">
+0.614628944747286
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+2
+</td>
+<td style="text-align: center;">
+age_(95,100]
+</td>
+<td style="text-align: center;">
+0.532573672413908
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+3
+</td>
+<td style="text-align: center;">
+age_(90,95]
+</td>
+<td style="text-align: center;">
+0.521287666711732
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+4
+</td>
+<td style="text-align: center;">
+age_(80,85]
+</td>
+<td style="text-align: center;">
+0.511870563036945
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+5
+</td>
+<td style="text-align: center;">
+education_basic.4y
+</td>
+<td style="text-align: center;">
+0.499574174690189
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+6
+</td>
+<td style="text-align: center;">
+age_(75,80]
+</td>
+<td style="text-align: center;">
+0.485673157043733
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+7
+</td>
+<td style="text-align: center;">
+age_(85,90]
+</td>
+<td style="text-align: center;">
+0.455542812441589
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+8
+</td>
+<td style="text-align: center;">
+age_(70,75]
+</td>
+<td style="text-align: center;">
+0.442519827862729
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+9
+</td>
+<td style="text-align: center;">
+education_basic.6y
+</td>
+<td style="text-align: center;">
+0.425864072969512
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+10
+</td>
+<td style="text-align: center;">
+education_basic.9y
+</td>
+<td style="text-align: center;">
+0.413262796812826
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+11
+</td>
+<td style="text-align: center;">
+age_(65,70]
+</td>
+<td style="text-align: center;">
+0.406285430866696
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+12
+</td>
+<td style="text-align: center;">
+job_retired
+</td>
+<td style="text-align: center;">
+0.395757375435176
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+13
+</td>
+<td style="text-align: center;">
+job_blue-collar
+</td>
+<td style="text-align: center;">
+0.336573641418974
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+14
+</td>
+<td style="text-align: center;">
+age_(55,60]
+</td>
+<td style="text-align: center;">
+0.317706985748417
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+15
+</td>
+<td style="text-align: center;">
+age_(60,65]
+</td>
+<td style="text-align: center;">
+0.30903650817557
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+16
+</td>
+<td style="text-align: center;">
+job_housemaid
+</td>
+<td style="text-align: center;">
+0.258328554087292
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+17
+</td>
+<td style="text-align: center;">
+marital_married
+</td>
+<td style="text-align: center;">
+0.221610974571282
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+18
+</td>
+<td style="text-align: center;">
+age_(45,50]
+</td>
+<td style="text-align: center;">
+0.199782460949052
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+19
+</td>
+<td style="text-align: center;">
+age_(40,45]
+</td>
+<td style="text-align: center;">
+0.168656096244475
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+20
+</td>
+<td style="text-align: center;">
+age_(50,55]
+</td>
+<td style="text-align: center;">
+0.165122119174862
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+21
+</td>
+<td style="text-align: center;">
+marital_divorced
+</td>
+<td style="text-align: center;">
+0.117589330891997
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+22
+</td>
+<td style="text-align: center;">
+job_entrepreneur
+</td>
+<td style="text-align: center;">
+0.111950599926813
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+23
+</td>
+<td style="text-align: center;">
+loan_no
+</td>
+<td style="text-align: center;">
+0.0964555421991504
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+24
+</td>
+<td style="text-align: center;">
+age_(35,40]
+</td>
+<td style="text-align: center;">
+0.0915633307791757
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+25
+</td>
+<td style="text-align: center;">
+education_high.school
+</td>
+<td style="text-align: center;">
+0.0848526993692817
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+26
+</td>
+<td style="text-align: center;">
+housing_yes
+</td>
+<td style="text-align: center;">
+0.0359611230169339
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+27
+</td>
+<td style="text-align: center;">
+housing_no
+</td>
+<td style="text-align: center;">
+0.026248770509769
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+28
+</td>
+<td style="text-align: center;">
+job_unemployed
+</td>
+<td style="text-align: center;">
+0.00454303345300652
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+29
+</td>
+<td style="text-align: center;">
+education_professional.course
+</td>
+<td style="text-align: center;">
+0.000849001342157226
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+30
+</td>
+<td style="text-align: center;">
+loan_yes
+</td>
+<td style="text-align: center;">
+-0.00470000924974507
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+31
+</td>
+<td style="text-align: center;">
+job_services
+</td>
+<td style="text-align: center;">
+-0.0301960646570024
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+32
+</td>
+<td style="text-align: center;">
+job_self-employed
+</td>
+<td style="text-align: center;">
+-0.0331047083152844
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+33
+</td>
+<td style="text-align: center;">
+job_management
+</td>
+<td style="text-align: center;">
+-0.0345470321819919
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+34
+</td>
+<td style="text-align: center;">
+education_university.degree
+</td>
+<td style="text-align: center;">
+-0.0670164558577175
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+35
+</td>
+<td style="text-align: center;">
+age_(30,35]
+</td>
+<td style="text-align: center;">
+-0.118863749383976
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+36
+</td>
+<td style="text-align: center;">
+job_admin.
+</td>
+<td style="text-align: center;">
+-0.146944124531494
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+37
+</td>
+<td style="text-align: center;">
+</s>
+</td>
+<td style="text-align: center;">
+-0.19853829141037
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+38
+</td>
+<td style="text-align: center;">
+age_(20,25]
+</td>
+<td style="text-align: center;">
+-0.213571898830625
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+39
+</td>
+<td style="text-align: center;">
+job_technician
+</td>
+<td style="text-align: center;">
+-0.224886051003847
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+40
+</td>
+<td style="text-align: center;">
+job_student
+</td>
+<td style="text-align: center;">
+-0.230520616789559
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+41
+</td>
+<td style="text-align: center;">
+age_(25,30]
+</td>
+<td style="text-align: center;">
+-0.344754277622611
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+42
+</td>
+<td style="text-align: center;">
+age_(15,20]
+</td>
+<td style="text-align: center;">
+-0.358076867334016
+</td>
+</tr>
+<tr>
+<td style="border-bottom: 2px solid grey; text-align: left;">
+43
+</td>
+<td style="border-bottom: 2px solid grey; text-align: center;">
+marital_single
+</td>
+<td style="border-bottom: 2px solid grey; text-align: center;">
+-0.40080081554474
+</td>
+</tr>
+</tbody>
+</table>
+<p>So, for the less educated customers we see most prototypically they are retired, housemaids or blue-collar workers and are less associated with younger people or higher education, which fits in the picture.<br />
+However, note that these numbers do not represent how many customers are like this, it is more a picture of the most prototypical members (mean / middle in the customer2vec space) of these cluster. Close to those might be others with much more counts. So to get a better picture of stereotypical socio-demos, we also consider the categories counts within the cluster:</p>
+<pre class="r"><code>#little bit of data wrangeling to get a stereotypicity metric
+category_labels_counts_within_cluster1&lt;-rlist::list.rbind(lapply(lapply(socio_economic_vars_cl[socio_economic_vars_cl$clusters==1,], table), as.data.frame))
+category_labels_counts_within_cluster1$socio_demo_variable&lt;-rownames(category_labels_counts_within_cluster1)
+
+
+al_bundies_socio_demo_associations&lt;-dplyr::left_join(al_bundies_socio_demo_associations, category_labels_counts_within_cluster1, by=c(&quot;socio_demo_category&quot;=&quot;Var1&quot;))</code></pre>
+<pre><code>## Warning: Column `socio_demo_category`/`Var1` joining character vector and
+## factor, coercing into character vector</code></pre>
+<pre class="r"><code>al_bundies_socio_demo_associations$stereotypicity&lt;-al_bundies_socio_demo_associations$similarity*al_bundies_socio_demo_associations$Freq
+
+
+data&lt;-dplyr::select(dplyr::arrange(al_bundies_socio_demo_associations, desc(stereotypicity)), socio_demo_category, stereotypicity, similarity, Freq)
+
+widgetframe::frameWidget(
+  DT::datatable(data, extensions = &#39;FixedColumns&#39;,
+  options = list(
+  scrollX = TRUE,
+  scrollCollapse = T
+)), height = 600)</code></pre>
+<div id="htmlwidget-3" style="width:100%;height:600px;" class="widgetframe html-widget"></div>
+<script type="application/json" data-for="htmlwidget-3">{"x":{"url":"/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html//widgets/widget_unnamed-chunk-31.html","options":{"xdomain":"*","allowfullscreen":false,"lazyload":false}},"evals":[],"jsHooks":[]}</script>
+<p>So, by taking the frequencies into account, we see that blue-collar, married with basic school education is a much better description than the few, but very prototypical, cases of retired people in this cluster (for fun let’s call it Al bundy cluster).</p>
+<p>Lets check out the same for the other two clusters:</p>
+<pre class="r"><code>#little bit of data wrangeling to get a stereotypicity metric
+category_labels_counts_within_cluster3&lt;-rlist::list.rbind(lapply(lapply(socio_economic_vars_cl[socio_economic_vars_cl$clusters==3,], table), as.data.frame))
+category_labels_counts_within_cluster3$socio_demo_variable&lt;-rownames(category_labels_counts_within_cluster3)
+
+
+jds_socio_demo_associations&lt;-dplyr::left_join(jds_socio_demo_associations, category_labels_counts_within_cluster3, by=c(&quot;socio_demo_category&quot;=&quot;Var1&quot;))</code></pre>
+<pre><code>## Warning: Column `socio_demo_category`/`Var1` joining character vector and
+## factor, coercing into character vector</code></pre>
+<pre class="r"><code>jds_socio_demo_associations$stereotypicity&lt;-jds_socio_demo_associations$similarity*jds_socio_demo_associations$Freq
+
+
+
+data&lt;-dplyr::select(dplyr::arrange(jds_socio_demo_associations, desc(stereotypicity)), socio_demo_category, stereotypicity, similarity, Freq)
+
+widgetframe::frameWidget(
+  DT::datatable(data, extensions = &#39;FixedColumns&#39;,
+  options = list(
+  scrollX = TRUE,
+  scrollCollapse = T
+)), height = 600)</code></pre>
+<div id="htmlwidget-4" style="width:100%;height:600px;" class="widgetframe html-widget"></div>
+<script type="application/json" data-for="htmlwidget-4">{"x":{"url":"/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html//widgets/widget_unnamed-chunk-32.html","options":{"xdomain":"*","allowfullscreen":false,"lazyload":false}},"evals":[],"jsHooks":[]}</script>
+<p>Customers from cluster 3 (Scrubs cluster) tend to have higher education, middle class jobs. They are also relatively often young adults, but are less dissimilar to older people than to younger people in some regards. As we have seen before, adult people with administrative jobs have been found extraordinary using the isolation forest algorithm. These may be relatively young people with enough wealth to afford saving money, which is more like stuff typically elderly may afford to do.</p>
+<pre class="r"><code>#little bit of data wrangeling to get a stereotypicity metric
+category_labels_counts_within_cluster2&lt;-rlist::list.rbind(lapply(lapply(socio_economic_vars_cl[socio_economic_vars_cl$clusters==2,], table), as.data.frame))
+category_labels_counts_within_cluster2$socio_demo_variable&lt;-rownames(category_labels_counts_within_cluster2)
+
+
+walter_whites_socio_demo_associations&lt;-dplyr::left_join(walter_whites_socio_demo_associations, category_labels_counts_within_cluster2, by=c(&quot;socio_demo_category&quot;=&quot;Var1&quot;))</code></pre>
+<pre><code>## Warning: Column `socio_demo_category`/`Var1` joining character vector and
+## factor, coercing into character vector</code></pre>
+<pre class="r"><code>walter_whites_socio_demo_associations$stereotypicity&lt;-walter_whites_socio_demo_associations$similarity*walter_whites_socio_demo_associations$Freq
+
+
+
+data&lt;-dplyr::select(dplyr::arrange(walter_whites_socio_demo_associations, desc(stereotypicity)), socio_demo_category, stereotypicity, similarity, Freq)
+
+widgetframe::frameWidget(
+  DT::datatable(data, extensions = &#39;FixedColumns&#39;,
+  options = list(
+  scrollX = TRUE,
+  scrollCollapse = T
+)), height = 600)</code></pre>
+<div id="htmlwidget-5" style="width:100%;height:600px;" class="widgetframe html-widget"></div>
+<script type="application/json" data-for="htmlwidget-5">{"x":{"url":"/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html//widgets/widget_unnamed-chunk-33.html","options":{"xdomain":"*","allowfullscreen":false,"lazyload":false}},"evals":[],"jsHooks":[]}</script>
+<p>For these individuals from cluster 2 (Walter Whites cluster), we see that they tend to have no personal loan, a university degree or other higher education and a (higher) middle class job and are just of adult age and may be singles.</p>
+<p>Next we want to add these features (customer identity embeddings and clusters) to the dataset, and we need to create helper models to assign these values to unseen data as well.</p>
+<pre class="r"><code>#add clusters and customer identity embeddings to the dataset
+
+clusters_df&lt;-data.frame(clusters=as.factor(clusters$cluster)[1:nrow(dataset)])
+customer2vec_df&lt;-as.data.frame(as.matrix.POSIXlt(customer_identity_vectors))
+
+dataset&lt;-dplyr::bind_cols(dataset, clusters_df, customer2vec_df)
+
+predict_df_c2vec&lt;-dplyr::select(dataset, -y, -clusters)
+predict_df_clusters&lt;-dplyr::select(dataset, -(V1:V10), -y)
+
+predict_clusters&lt;-ranger::ranger(dependent.variable.name = &quot;clusters&quot;, data = predict_df_clusters, num.trees = 128, write.forest = T, respect.unordered.factors = T)
+predict_clusters</code></pre>
+<pre><code>## Ranger result
+## 
+## Call:
+##  ranger::ranger(dependent.variable.name = &quot;clusters&quot;, data = predict_df_clusters,      num.trees = 128, write.forest = T, respect.unordered.factors = T) 
+## 
+## Type:                             Classification 
+## Number of trees:                  128 
+## Sample size:                      41043 
+## Number of independent variables:  21 
+## Mtry:                             4 
+## Target node size:                 1 
+## Variable importance mode:         none 
+## Splitrule:                        gini 
+## OOB prediction error:             3.08 %</code></pre>
+<pre class="r"><code>predict_c2vec&lt;-ranger::ranger(V1 + V2 + V3 +  V4 + V5 + V6 + V7 + V8 + V9 + V10~., data = predict_df_c2vec, num.trees = 128, write.forest = T, respect.unordered.factors = T)
+predict_c2vec</code></pre>
+<pre><code>## Ranger result
+## 
+## Call:
+##  ranger::ranger(V1 + V2 + V3 + V4 + V5 + V6 + V7 + V8 + V9 + V10 ~      ., data = predict_df_c2vec, num.trees = 128, write.forest = T,      respect.unordered.factors = T) 
+## 
+## Type:                             Regression 
+## Number of trees:                  128 
+## Sample size:                      41043 
+## Number of independent variables:  21 
+## Mtry:                             4 
+## Target node size:                 5 
+## Variable importance mode:         none 
+## Splitrule:                        variance 
+## OOB prediction error (MSE):       0.07827185 
+## R squared (OOB):                  0.9271001</code></pre>
+<pre class="r"><code>#prediction error looks ok for both deployment helper models</code></pre>
+</div>
+</div>
+</div>
+<div id="feature-selection" class="section level2">
+<h2>Feature Selection</h2>
+<p>There are lot’s of ways of doing this, using wrappers around ML algos and measuring their performance or less computationally expensive indicators, on which I will focus upon here.</p>
+<p>We combine several indicators in a simple way, by averaging the variables importance ranking:<br />
+- Random forest variable importance measures (gini &amp; permutation based)<br />
+- Conditional inference tree importance measures (accuracy and AUC based)<br />
+- several information gain related measures</p>
+<p>Let’s go through the inner workings of one of the more interesting algorithms: Conditional inference tree based random forest area under the curve importance measure. It is less biased in cases of imbalanced data (see <a href="https://epub.ub.uni-muenchen.de/14206/" class="uri">https://epub.ub.uni-muenchen.de/14206/</a>).<br />
+In a nutshell, the sum of the difference between the AUC of the original and randomly permuted data is calculated, the bigger the difference, the more important the variable. We are clealy dealing with imbalanced response variables:</p>
+<pre class="r"><code>#show imbalanced data
+barplot&lt;-ggplot2::ggplot(dataset, aes(x=y)) + geom_bar(aes(fill=y), position=&quot;stack&quot;, alpha=1) + theme_bw() + theme(text=element_text(family=&quot;sans&quot;, face=&quot;plain&quot;, color=&quot;#000000&quot;, size=15, hjust=0.5, vjust=0.5)) + ggtitle(&quot;Imbalanced Target Variable&quot;) + xlab(&quot;subscribe to term deposit&quot;) + ylab(&quot;count&quot;)
+
+barplot</code></pre>
+<p><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-35-1.png" width="672" /></p>
+<p>However, because there is no “right” automated way of estimating attribute importance, we still prefer to combine several measures in an ensemble measure. When looking at the table below, remember that variables named V1, V2, … are the variables of the customer identity embeddings.</p>
+<pre class="r"><code>#train conditional inference trees forest (takes quite some time, so it is commented out here)
+
+# partyforest&lt;-party::cforest(y~., dataset, control=party::cforest_unbiased(ntree=64))
+
+#extract area under the curve based variable importance (takes some time)
+#var_imp&lt;-party::varimpAUC(partyforest)
+load(&quot;/home/knut/Documents/blog-tranq/content/post/data/var_imp_cforest.Rdata&quot;)
+
+variable_importances_ctree_auc&lt;-data.frame(permutation_importance=var_imp)
+variable_importances_ctree_auc$variable&lt;-colnames(dplyr::select(dataset, -y))
+variable_importances_ctree_auc&lt;-dplyr::arrange(variable_importances_ctree_auc, desc(permutation_importance))
+variable_importances_ctree_auc$rank&lt;-1:nrow(variable_importances_ctree_auc)
+colnames(variable_importances_ctree_auc)&lt;-c(&quot;importance&quot;, &quot;variable&quot;, &quot;rank&quot;)
+
+load(&quot;/home/knut/Documents/blog-tranq/content/post/data/partyforest.Rdata&quot;)
+# accuracy cforest importance
+# var_imp2&lt;-party::varimp(partyforest)
+variable_importances_ctree_acc&lt;-data.frame(permutation_importance=var_imp2)
+variable_importances_ctree_acc$variable&lt;-colnames(dplyr::select(dataset, -y))
+variable_importances_ctree_acc&lt;-dplyr::arrange(variable_importances_ctree_acc, desc(permutation_importance))
+variable_importances_ctree_acc$rank&lt;-1:nrow(variable_importances_ctree_acc)
+colnames(variable_importances_ctree_acc)&lt;-c(&quot;importance&quot;, &quot;variable&quot;, &quot;rank&quot;)
+
+
+
+
+#redo for usual random forest on permutation importance
+rf&lt;-ranger::ranger(dependent.variable.name = &quot;y&quot;, data = dataset, num.trees = 128, respect.unordered.factors = T, importance = &quot;permutation&quot;)
+
+variable_importances_perm&lt;-data.frame(permutation_importance=rf$variable.importance)
+variable_importances_perm$variable&lt;-colnames(dplyr::select(dataset, -y))
+variable_importances_perm&lt;-dplyr::arrange(variable_importances_perm, desc(permutation_importance))
+variable_importances_perm$rank&lt;-1:nrow(variable_importances_perm)
+colnames(variable_importances_perm)&lt;-c(&quot;importance&quot;, &quot;variable&quot;, &quot;rank&quot;)
+
+
+#redo for usual random forest on impurity importance
+rf&lt;-ranger::ranger(dependent.variable.name = &quot;y&quot;, data = dataset, num.trees = 128, respect.unordered.factors = T, importance = &quot;impurity&quot;)
+
+variable_importances_imp&lt;-data.frame(impurity_importance=rf$variable.importance)
+variable_importances_imp$variable&lt;-colnames(dplyr::select(dataset, -y))
+variable_importances_imp&lt;-dplyr::arrange(variable_importances_imp, desc(impurity_importance))
+variable_importances_imp$rank&lt;-1:nrow(variable_importances_imp)
+colnames(variable_importances_imp)&lt;-c(&quot;importance&quot;, &quot;variable&quot;, &quot;rank&quot;)
+
+
+#information gain based metrics
+library(FSelectorRcpp)
+x&lt;-information_gain(y~., dataset, type = &quot;infogain&quot;)%&gt;%dplyr::arrange(desc(importance))
+x&lt;-x%&gt;%dplyr::mutate(rank=1:nrow(x))%&gt;%dplyr::rename(variable=attributes)
+y&lt;-information_gain(y~., dataset, type = &quot;gainratio&quot;)%&gt;%dplyr::arrange(desc(importance))
+y&lt;-y%&gt;%dplyr::mutate(rank=1:nrow(y))%&gt;%dplyr::rename(variable=attributes)
+z&lt;-information_gain(y~., dataset, type = &quot;symuncert&quot;)%&gt;%dplyr::arrange(desc(importance))
+z&lt;-z%&gt;%dplyr::mutate(rank=1:nrow(z))%&gt;%dplyr::rename(variable=attributes)
+
+
+#calculate mean importance rank
+variable_importances&lt;-dplyr::bind_rows(variable_importances_ctree_auc, variable_importances_ctree_acc, variable_importances_perm, variable_importances_imp, x, y, z)%&gt;%dplyr::group_by(variable)%&gt;%dplyr::summarise(median_rank=median(rank))%&gt;%dplyr::arrange(median_rank)
+
+
+htmlTable(variable_importances)</code></pre>
+<table class="gmisc_table" style="border-collapse: collapse; margin-top: 1em; margin-bottom: 1em;">
+<thead>
+<tr>
+<th style="border-bottom: 1px solid grey; border-top: 2px solid grey;">
+</th>
+<th style="border-bottom: 1px solid grey; border-top: 2px solid grey; text-align: center;">
+variable
+</th>
+<th style="border-bottom: 1px solid grey; border-top: 2px solid grey; text-align: center;">
+median_rank
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">
+1
+</td>
+<td style="text-align: center;">
+emp.var.rate
+</td>
+<td style="text-align: center;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+2
+</td>
+<td style="text-align: center;">
+euribor3m
+</td>
+<td style="text-align: center;">
+3
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+3
+</td>
+<td style="text-align: center;">
+nr.employed
+</td>
+<td style="text-align: center;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+4
+</td>
+<td style="text-align: center;">
+cons.conf.idx
+</td>
+<td style="text-align: center;">
+6
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+5
+</td>
+<td style="text-align: center;">
+pdays
+</td>
+<td style="text-align: center;">
+6
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+6
+</td>
+<td style="text-align: center;">
+cons.price.idx
+</td>
+<td style="text-align: center;">
+7
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+7
+</td>
+<td style="text-align: center;">
+month
+</td>
+<td style="text-align: center;">
+8
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+8
+</td>
+<td style="text-align: center;">
+poutcome
+</td>
+<td style="text-align: center;">
+8
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+9
+</td>
+<td style="text-align: center;">
+previous
+</td>
+<td style="text-align: center;">
+9
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+10
+</td>
+<td style="text-align: center;">
+contact
+</td>
+<td style="text-align: center;">
+11
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+11
+</td>
+<td style="text-align: center;">
+default
+</td>
+<td style="text-align: center;">
+14
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+12
+</td>
+<td style="text-align: center;">
+V5
+</td>
+<td style="text-align: center;">
+14
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+13
+</td>
+<td style="text-align: center;">
+V2
+</td>
+<td style="text-align: center;">
+15
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+14
+</td>
+<td style="text-align: center;">
+age
+</td>
+<td style="text-align: center;">
+16
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+15
+</td>
+<td style="text-align: center;">
+job
+</td>
+<td style="text-align: center;">
+16
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+16
+</td>
+<td style="text-align: center;">
+V7
+</td>
+<td style="text-align: center;">
+17
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+17
+</td>
+<td style="text-align: center;">
+campaign
+</td>
+<td style="text-align: center;">
+19
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+18
+</td>
+<td style="text-align: center;">
+V1
+</td>
+<td style="text-align: center;">
+19
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+19
+</td>
+<td style="text-align: center;">
+V3
+</td>
+<td style="text-align: center;">
+19
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+20
+</td>
+<td style="text-align: center;">
+V4
+</td>
+<td style="text-align: center;">
+19
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+21
+</td>
+<td style="text-align: center;">
+V6
+</td>
+<td style="text-align: center;">
+20
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+22
+</td>
+<td style="text-align: center;">
+V9
+</td>
+<td style="text-align: center;">
+20
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+23
+</td>
+<td style="text-align: center;">
+clusters
+</td>
+<td style="text-align: center;">
+21
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+24
+</td>
+<td style="text-align: center;">
+V10
+</td>
+<td style="text-align: center;">
+21
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+25
+</td>
+<td style="text-align: center;">
+education
+</td>
+<td style="text-align: center;">
+22
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+26
+</td>
+<td style="text-align: center;">
+V8
+</td>
+<td style="text-align: center;">
+22
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+27
+</td>
+<td style="text-align: center;">
+older_prospects
+</td>
+<td style="text-align: center;">
+23
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+28
+</td>
+<td style="text-align: center;">
+marital
+</td>
+<td style="text-align: center;">
+26
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+29
+</td>
+<td style="text-align: center;">
+day_of_week
+</td>
+<td style="text-align: center;">
+27
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+30
+</td>
+<td style="text-align: center;">
+socio_eco
+</td>
+<td style="text-align: center;">
+28
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+31
+</td>
+<td style="text-align: center;">
+housing
+</td>
+<td style="text-align: center;">
+31
+</td>
+</tr>
+<tr>
+<td style="border-bottom: 2px solid grey; text-align: left;">
+32
+</td>
+<td style="border-bottom: 2px solid grey; text-align: center;">
+loan
+</td>
+<td style="border-bottom: 2px solid grey; text-align: center;">
+32
+</td>
+</tr>
+</tbody>
+</table>
+<p>To decide on how many we want to keep, let’s look at at how the top k variables affect the true positive rate from undersampled data (as sampled by random forest):</p>
+<pre class="r"><code>accuracy_df&lt;-data.frame(accuracy=numeric())
+i = 0
+
+while (i &lt; nrow(variable_importances)){
+  pracma::tic()
+  i = i + 1
+  rf_pred&lt;-randomForestSRC::rfsrc(y~., data = dataset[,c(&quot;y&quot;, variable_importances$variable[1:i]),with=F], ntree = 20,
+           case.wt = randomForestSRC:::make.wt(dataset$y),
+           sampsize = randomForestSRC:::make.size(dataset$y))
+  
+predictions&lt;-as.character(rf_pred$class.oob)
+predictions[predictions==&quot;yes&quot;]&lt;-1
+predictions[predictions==&quot;no&quot;]&lt;-0
+predictions&lt;-as.numeric(predictions)
+actual&lt;-as.character(dataset$y)
+actual[actual==&quot;yes&quot;]&lt;-1
+actual[actual==&quot;no&quot;]&lt;-0
+actual&lt;-as.numeric(actual)
+
+accuracy=Metrics::accuracy(dataset$y, rf_pred$class.oob)
+f1=EvaluationMeasures::EvaluationMeasures.F1Score(c(actual), c(predictions))
+precision=EvaluationMeasures::EvaluationMeasures.Precision(c(actual), c(predictions))
+recall=EvaluationMeasures::EvaluationMeasures.Recall(c(actual), c(predictions))
+tpr=EvaluationMeasures::EvaluationMeasures.TPR(c(actual), c(predictions))
+  
+  accuracy_df&lt;-dplyr::bind_rows(accuracy_df, data.frame(accuracy=accuracy, f1=f1, precision=precision, recall=recall, tpr=tpr))
+  print(paste0(&quot;Model training and out-of-bag predictions using the top &quot;, i, &quot; variables took &quot;, pracma::toc(), &quot; seconds&quot;))
+}</code></pre>
+<pre><code>## elapsed time is 0.780000 seconds 
+## [1] &quot;Model training and out-of-bag predictions using the top 1 variables took 0.78000000000003 seconds&quot;
+## elapsed time is 0.815000 seconds 
+## [1] &quot;Model training and out-of-bag predictions using the top 2 variables took 0.814999999999998 seconds&quot;
+## elapsed time is 1.310000 seconds 
+## [1] &quot;Model training and out-of-bag predictions using the top 3 variables took 1.31 seconds&quot;
+## elapsed time is 0.796000 seconds 
+## [1] &quot;Model training and out-of-bag predictions using the top 4 variables took 0.795999999999992 seconds&quot;
+## elapsed time is 0.911000 seconds 
+## [1] &quot;Model training and out-of-bag predictions using the top 5 variables took 0.911000000000001 seconds&quot;
+## elapsed time is 0.898000 seconds 
+## [1] &quot;Model training and out-of-bag predictions using the top 6 variables took 0.897999999999968 seconds&quot;
+## elapsed time is 1.550000 seconds 
+## [1] &quot;Model training and out-of-bag predictions using the top 7 variables took 1.55000000000001 seconds&quot;
+## elapsed time is 1.642000 seconds 
+## [1] &quot;Model training and out-of-bag predictions using the top 8 variables took 1.642 seconds&quot;
+## elapsed time is 1.559000 seconds 
+## [1] &quot;Model training and out-of-bag predictions using the top 9 variables took 1.55899999999997 seconds&quot;
+## elapsed time is 1.883000 seconds 
+## [1] &quot;Model training and out-of-bag predictions using the top 10 variables took 1.88300000000004 seconds&quot;
+## elapsed time is 1.962000 seconds 
+## [1] &quot;Model training and out-of-bag predictions using the top 11 variables took 1.96199999999999 seconds&quot;
+## elapsed time is 2.043000 seconds 
+## [1] &quot;Model training and out-of-bag predictions using the top 12 variables took 2.04300000000001 seconds&quot;
+## elapsed time is 2.076000 seconds 
+## [1] &quot;Model training and out-of-bag predictions using the top 13 variables took 2.07599999999996 seconds&quot;
+## elapsed time is 1.975000 seconds 
+## [1] &quot;Model training and out-of-bag predictions using the top 14 variables took 1.97500000000002 seconds&quot;
+## elapsed time is 4.353000 seconds 
+## [1] &quot;Model training and out-of-bag predictions using the top 15 variables took 4.35300000000001 seconds&quot;
+## elapsed time is 4.889000 seconds 
+## [1] &quot;Model training and out-of-bag predictions using the top 16 variables took 4.88900000000001 seconds&quot;
+## elapsed time is 6.120000 seconds 
+## [1] &quot;Model training and out-of-bag predictions using the top 17 variables took 6.12 seconds&quot;
+## elapsed time is 5.320000 seconds 
+## [1] &quot;Model training and out-of-bag predictions using the top 18 variables took 5.31999999999999 seconds&quot;
+## elapsed time is 5.049000 seconds 
+## [1] &quot;Model training and out-of-bag predictions using the top 19 variables took 5.04899999999998 seconds&quot;
+## elapsed time is 4.961000 seconds 
+## [1] &quot;Model training and out-of-bag predictions using the top 20 variables took 4.96100000000001 seconds&quot;
+## elapsed time is 5.005000 seconds 
+## [1] &quot;Model training and out-of-bag predictions using the top 21 variables took 5.005 seconds&quot;
+## elapsed time is 4.955000 seconds 
+## [1] &quot;Model training and out-of-bag predictions using the top 22 variables took 4.95500000000004 seconds&quot;
+## elapsed time is 5.227000 seconds 
+## [1] &quot;Model training and out-of-bag predictions using the top 23 variables took 5.22699999999998 seconds&quot;
+## elapsed time is 4.785000 seconds 
+## [1] &quot;Model training and out-of-bag predictions using the top 24 variables took 4.78500000000003 seconds&quot;
+## elapsed time is 4.564000 seconds 
+## [1] &quot;Model training and out-of-bag predictions using the top 25 variables took 4.56400000000002 seconds&quot;
+## elapsed time is 5.345000 seconds 
+## [1] &quot;Model training and out-of-bag predictions using the top 26 variables took 5.34500000000003 seconds&quot;
+## elapsed time is 5.101000 seconds 
+## [1] &quot;Model training and out-of-bag predictions using the top 27 variables took 5.101 seconds&quot;
+## elapsed time is 4.513000 seconds 
+## [1] &quot;Model training and out-of-bag predictions using the top 28 variables took 4.51299999999998 seconds&quot;
+## elapsed time is 5.125000 seconds 
+## [1] &quot;Model training and out-of-bag predictions using the top 29 variables took 5.125 seconds&quot;
+## elapsed time is 4.654000 seconds 
+## [1] &quot;Model training and out-of-bag predictions using the top 30 variables took 4.654 seconds&quot;
+## elapsed time is 4.703000 seconds 
+## [1] &quot;Model training and out-of-bag predictions using the top 31 variables took 4.70299999999997 seconds&quot;
+## elapsed time is 5.748000 seconds 
+## [1] &quot;Model training and out-of-bag predictions using the top 32 variables took 5.74800000000005 seconds&quot;</code></pre>
+<p>Let’s plot the thing. Hover over the line to see the added variables name:</p>
+<pre class="r"><code>accuracy_df$variable_count&lt;-1:nrow(variable_importances)
+accuracy_df$added_variable&lt;-variable_importances$variable
+
+
+library(ggplot2)
+lineplot&lt;-ggplot(accuracy_df, aes(y=accuracy, x=variable_count)) + geom_line(stat=&quot;identity&quot;, position=&quot;identity&quot;, alpha=1) + theme_bw() + theme(text=element_text(family=&quot;sans&quot;, face=&quot;plain&quot;, color=&quot;#000000&quot;, size=15, hjust=0.5, vjust=0.5)) + ggtitle(&quot;Change in Accuracy Score with top K features&quot;) + xlab(&quot;top k variables&quot;) + ylab(&quot;accuracy&quot;)
+
+p&lt;-plotly::ggplotly(lineplot)
+p$x$data[[1]]$text = paste(&quot;Added variable: &quot;, accuracy_df$added_variable)
+p</code></pre>
+<div id="4e58623d4cfe" style="width:672px;height:480px;" class="plotly html-widget"></div>
+<script type="application/json" data-for="4e58623d4cfe">{"x":{"data":[{"x":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32],"y":[0.720049703969008,0.837779889384304,0.833248056915917,0.831030870063105,0.83544087907804,0.833808444801793,0.834661208975952,0.83836464196087,0.841044757936798,0.83539214969666,0.841702604585435,0.790244377847623,0.818921618790049,0.824208756669834,0.824038203835002,0.825134614916064,0.830105011816875,0.831810540165193,0.831639987330361,0.833272421606608,0.833394245060059,0.831615622639671,0.832273469288307,0.831713081402432,0.831030870063105,0.830324294033087,0.832078551762785,0.829983188363424,0.835587067222182,0.833150598153156,0.834783032429403,0.833857174183174],"text":["Added variable:  emp.var.rate","Added variable:  euribor3m","Added variable:  nr.employed","Added variable:  cons.conf.idx","Added variable:  pdays","Added variable:  cons.price.idx","Added variable:  month","Added variable:  poutcome","Added variable:  previous","Added variable:  contact","Added variable:  default","Added variable:  V5","Added variable:  V2","Added variable:  age","Added variable:  job","Added variable:  V7","Added variable:  campaign","Added variable:  V1","Added variable:  V3","Added variable:  V4","Added variable:  V6","Added variable:  V9","Added variable:  clusters","Added variable:  V10","Added variable:  education","Added variable:  V8","Added variable:  older_prospects","Added variable:  marital","Added variable:  day_of_week","Added variable:  socio_eco","Added variable:  housing","Added variable:  loan"],"type":"scatter","mode":"lines","line":{"width":1.88976377952756,"color":"rgba(0,0,0,1)","dash":"solid"},"hoveron":"points","showlegend":false,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null}],"layout":{"margin":{"t":50.1386467413865,"r":7.30593607305936,"b":49.7467828974678,"l":62.7646326276463},"plot_bgcolor":"rgba(255,255,255,1)","paper_bgcolor":"rgba(255,255,255,1)","font":{"color":"rgba(0,0,0,1)","family":"sans","size":19.9252801992528},"title":"Change in Accuracy Score with top K features","titlefont":{"color":"rgba(0,0,0,1)","family":"sans","size":23.9103362391034},"xaxis":{"domain":[0,1],"type":"linear","autorange":false,"range":[-0.55,33.55],"tickmode":"array","ticktext":["0","10","20","30"],"tickvals":[0,10,20,30],"categoryorder":"array","categoryarray":["0","10","20","30"],"nticks":null,"ticks":"outside","tickcolor":"rgba(51,51,51,1)","ticklen":3.65296803652968,"tickwidth":0.66417600664176,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"sans","size":15.9402241594022},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":null,"gridwidth":0,"zeroline":false,"anchor":"y","title":"top k variables","titlefont":{"color":"rgba(0,0,0,1)","family":"sans","size":19.9252801992528},"hoverformat":".2f"},"yaxis":{"domain":[0,1],"type":"linear","autorange":false,"range":[0.713967058938187,0.847785249616256],"tickmode":"array","ticktext":["0.75","0.80"],"tickvals":[0.75,0.8],"categoryorder":"array","categoryarray":["0.75","0.80"],"nticks":null,"ticks":"outside","tickcolor":"rgba(51,51,51,1)","ticklen":3.65296803652968,"tickwidth":0.66417600664176,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"sans","size":15.9402241594022},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":null,"gridwidth":0,"zeroline":false,"anchor":"x","title":"accuracy","titlefont":{"color":"rgba(0,0,0,1)","family":"sans","size":19.9252801992528},"hoverformat":".2f"},"shapes":[{"type":"rect","fillcolor":"transparent","line":{"color":"rgba(51,51,51,1)","width":0.66417600664176,"linetype":"solid"},"yref":"paper","xref":"paper","x0":0,"x1":1,"y0":0,"y1":1}],"showlegend":false,"legend":{"bgcolor":"rgba(255,255,255,1)","bordercolor":"transparent","borderwidth":1.88976377952756,"font":{"color":"rgba(0,0,0,1)","family":"sans","size":15.9402241594022}},"hovermode":"closest","barmode":"relative"},"config":{"doubleClick":"reset","modeBarButtonsToAdd":[{"name":"Collaborate","icon":{"width":1000,"ascent":500,"descent":-50,"path":"M487 375c7-10 9-23 5-36l-79-259c-3-12-11-23-22-31-11-8-22-12-35-12l-263 0c-15 0-29 5-43 15-13 10-23 23-28 37-5 13-5 25-1 37 0 0 0 3 1 7 1 5 1 8 1 11 0 2 0 4-1 6 0 3-1 5-1 6 1 2 2 4 3 6 1 2 2 4 4 6 2 3 4 5 5 7 5 7 9 16 13 26 4 10 7 19 9 26 0 2 0 5 0 9-1 4-1 6 0 8 0 2 2 5 4 8 3 3 5 5 5 7 4 6 8 15 12 26 4 11 7 19 7 26 1 1 0 4 0 9-1 4-1 7 0 8 1 2 3 5 6 8 4 4 6 6 6 7 4 5 8 13 13 24 4 11 7 20 7 28 1 1 0 4 0 7-1 3-1 6-1 7 0 2 1 4 3 6 1 1 3 4 5 6 2 3 3 5 5 6 1 2 3 5 4 9 2 3 3 7 5 10 1 3 2 6 4 10 2 4 4 7 6 9 2 3 4 5 7 7 3 2 7 3 11 3 3 0 8 0 13-1l0-1c7 2 12 2 14 2l218 0c14 0 25-5 32-16 8-10 10-23 6-37l-79-259c-7-22-13-37-20-43-7-7-19-10-37-10l-248 0c-5 0-9-2-11-5-2-3-2-7 0-12 4-13 18-20 41-20l264 0c5 0 10 2 16 5 5 3 8 6 10 11l85 282c2 5 2 10 2 17 7-3 13-7 17-13z m-304 0c-1-3-1-5 0-7 1-1 3-2 6-2l174 0c2 0 4 1 7 2 2 2 4 4 5 7l6 18c0 3 0 5-1 7-1 1-3 2-6 2l-173 0c-3 0-5-1-8-2-2-2-4-4-4-7z m-24-73c-1-3-1-5 0-7 2-2 3-2 6-2l174 0c2 0 5 0 7 2 3 2 4 4 5 7l6 18c1 2 0 5-1 6-1 2-3 3-5 3l-174 0c-3 0-5-1-7-3-3-1-4-4-5-6z"},"click":"function(gd) { \n        // is this being viewed in RStudio?\n        if (location.search == '?viewer_pane=1') {\n          alert('To learn about plotly for collaboration, visit:\\n https://cpsievert.github.io/plotly_book/plot-ly-for-collaboration.html');\n        } else {\n          window.open('https://cpsievert.github.io/plotly_book/plot-ly-for-collaboration.html', '_blank');\n        }\n      }"}],"cloud":false},"source":"A","attrs":{"4e58149a180a":{"x":{},"y":{},"type":"scatter"}},"cur_data":"4e58149a180a","visdat":{"4e58149a180a":["function (y) ","x"]},"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.2,"selected":{"opacity":1}},"base_url":"https://plot.ly"},"evals":["config.modeBarButtonsToAdd.0.click"],"jsHooks":{"render":[{"code":"function(el, x) { var ctConfig = crosstalk.var('plotlyCrosstalkOpts').set({\"on\":\"plotly_click\",\"persistent\":false,\"dynamic\":false,\"selectize\":false,\"opacityDim\":0.2,\"selected\":{\"opacity\":1}}); }","data":null}]}}</script>
+<p>If we were after accuracy, we could go with the top 3 or 11 variables. However, we are, from a business perspective, also interested in the true positive rate: recognizing each customer that wants to subscribe to the bank deposit makes much more money than spending a little too much on unsuccesful calls. Things look very different when we look at the true positive rate. When we look at these results, we do not want to get rid of those variables, which appear to increase the TPR:</p>
+<pre class="r"><code>lineplot&lt;-ggplot(accuracy_df, aes(y=tpr, x=variable_count)) + geom_line(stat=&quot;identity&quot;, position=&quot;identity&quot;, alpha=1) + theme_bw() + theme(text=element_text(family=&quot;sans&quot;, face=&quot;plain&quot;, color=&quot;#000000&quot;, size=15, hjust=0.5, vjust=0.5)) + ggtitle(&quot;True Positive Rate with top K features&quot;) + xlab(&quot;top k variables&quot;) + ylab(&quot;True Positive Rate&quot;)
+
+p&lt;-plotly::ggplotly(lineplot)
+p$x$data[[1]]$text = paste(&quot;Added variable: &quot;, accuracy_df$added_variable)
+p</code></pre>
+<div id="4e585191cfc6" style="width:672px;height:480px;" class="plotly html-widget"></div>
+<script type="application/json" data-for="4e585191cfc6">{"x":{"data":[{"x":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32],"y":[0.7121,0.6137,0.6359,0.6311,0.6141,0.6276,0.6287,0.6246,0.6274,0.6185,0.6211,0.6198,0.6104,0.6183,0.6057,0.6067,0.6057,0.6002,0.6196,0.6057,0.61,0.5976,0.6098,0.6061,0.6004,0.6033,0.6087,0.6022,0.6011,0.6041,0.6102,0.6109],"text":["Added variable:  emp.var.rate","Added variable:  euribor3m","Added variable:  nr.employed","Added variable:  cons.conf.idx","Added variable:  pdays","Added variable:  cons.price.idx","Added variable:  month","Added variable:  poutcome","Added variable:  previous","Added variable:  contact","Added variable:  default","Added variable:  V5","Added variable:  V2","Added variable:  age","Added variable:  job","Added variable:  V7","Added variable:  campaign","Added variable:  V1","Added variable:  V3","Added variable:  V4","Added variable:  V6","Added variable:  V9","Added variable:  clusters","Added variable:  V10","Added variable:  education","Added variable:  V8","Added variable:  older_prospects","Added variable:  marital","Added variable:  day_of_week","Added variable:  socio_eco","Added variable:  housing","Added variable:  loan"],"type":"scatter","mode":"lines","line":{"width":1.88976377952756,"color":"rgba(0,0,0,1)","dash":"solid"},"hoveron":"points","showlegend":false,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null}],"layout":{"margin":{"t":50.1386467413865,"r":7.30593607305936,"b":49.7467828974678,"l":62.7646326276463},"plot_bgcolor":"rgba(255,255,255,1)","paper_bgcolor":"rgba(255,255,255,1)","font":{"color":"rgba(0,0,0,1)","family":"sans","size":19.9252801992528},"title":"True Positive Rate with top K features","titlefont":{"color":"rgba(0,0,0,1)","family":"sans","size":23.9103362391034},"xaxis":{"domain":[0,1],"type":"linear","autorange":false,"range":[-0.55,33.55],"tickmode":"array","ticktext":["0","10","20","30"],"tickvals":[0,10,20,30],"categoryorder":"array","categoryarray":["0","10","20","30"],"nticks":null,"ticks":"outside","tickcolor":"rgba(51,51,51,1)","ticklen":3.65296803652968,"tickwidth":0.66417600664176,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"sans","size":15.9402241594022},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":null,"gridwidth":0,"zeroline":false,"anchor":"y","title":"top k variables","titlefont":{"color":"rgba(0,0,0,1)","family":"sans","size":19.9252801992528},"hoverformat":".2f"},"yaxis":{"domain":[0,1],"type":"linear","autorange":false,"range":[0.591875,0.717825],"tickmode":"array","ticktext":["0.60","0.63","0.66","0.69"],"tickvals":[0.6,0.63,0.66,0.69],"categoryorder":"array","categoryarray":["0.60","0.63","0.66","0.69"],"nticks":null,"ticks":"outside","tickcolor":"rgba(51,51,51,1)","ticklen":3.65296803652968,"tickwidth":0.66417600664176,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"sans","size":15.9402241594022},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":null,"gridwidth":0,"zeroline":false,"anchor":"x","title":"True Positive Rate","titlefont":{"color":"rgba(0,0,0,1)","family":"sans","size":19.9252801992528},"hoverformat":".2f"},"shapes":[{"type":"rect","fillcolor":"transparent","line":{"color":"rgba(51,51,51,1)","width":0.66417600664176,"linetype":"solid"},"yref":"paper","xref":"paper","x0":0,"x1":1,"y0":0,"y1":1}],"showlegend":false,"legend":{"bgcolor":"rgba(255,255,255,1)","bordercolor":"transparent","borderwidth":1.88976377952756,"font":{"color":"rgba(0,0,0,1)","family":"sans","size":15.9402241594022}},"hovermode":"closest","barmode":"relative"},"config":{"doubleClick":"reset","modeBarButtonsToAdd":[{"name":"Collaborate","icon":{"width":1000,"ascent":500,"descent":-50,"path":"M487 375c7-10 9-23 5-36l-79-259c-3-12-11-23-22-31-11-8-22-12-35-12l-263 0c-15 0-29 5-43 15-13 10-23 23-28 37-5 13-5 25-1 37 0 0 0 3 1 7 1 5 1 8 1 11 0 2 0 4-1 6 0 3-1 5-1 6 1 2 2 4 3 6 1 2 2 4 4 6 2 3 4 5 5 7 5 7 9 16 13 26 4 10 7 19 9 26 0 2 0 5 0 9-1 4-1 6 0 8 0 2 2 5 4 8 3 3 5 5 5 7 4 6 8 15 12 26 4 11 7 19 7 26 1 1 0 4 0 9-1 4-1 7 0 8 1 2 3 5 6 8 4 4 6 6 6 7 4 5 8 13 13 24 4 11 7 20 7 28 1 1 0 4 0 7-1 3-1 6-1 7 0 2 1 4 3 6 1 1 3 4 5 6 2 3 3 5 5 6 1 2 3 5 4 9 2 3 3 7 5 10 1 3 2 6 4 10 2 4 4 7 6 9 2 3 4 5 7 7 3 2 7 3 11 3 3 0 8 0 13-1l0-1c7 2 12 2 14 2l218 0c14 0 25-5 32-16 8-10 10-23 6-37l-79-259c-7-22-13-37-20-43-7-7-19-10-37-10l-248 0c-5 0-9-2-11-5-2-3-2-7 0-12 4-13 18-20 41-20l264 0c5 0 10 2 16 5 5 3 8 6 10 11l85 282c2 5 2 10 2 17 7-3 13-7 17-13z m-304 0c-1-3-1-5 0-7 1-1 3-2 6-2l174 0c2 0 4 1 7 2 2 2 4 4 5 7l6 18c0 3 0 5-1 7-1 1-3 2-6 2l-173 0c-3 0-5-1-8-2-2-2-4-4-4-7z m-24-73c-1-3-1-5 0-7 2-2 3-2 6-2l174 0c2 0 5 0 7 2 3 2 4 4 5 7l6 18c1 2 0 5-1 6-1 2-3 3-5 3l-174 0c-3 0-5-1-7-3-3-1-4-4-5-6z"},"click":"function(gd) { \n        // is this being viewed in RStudio?\n        if (location.search == '?viewer_pane=1') {\n          alert('To learn about plotly for collaboration, visit:\\n https://cpsievert.github.io/plotly_book/plot-ly-for-collaboration.html');\n        } else {\n          window.open('https://cpsievert.github.io/plotly_book/plot-ly-for-collaboration.html', '_blank');\n        }\n      }"}],"cloud":false},"source":"A","attrs":{"4e5846fa5a3f":{"x":{},"y":{},"type":"scatter"}},"cur_data":"4e5846fa5a3f","visdat":{"4e5846fa5a3f":["function (y) ","x"]},"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.2,"selected":{"opacity":1}},"base_url":"https://plot.ly"},"evals":["config.modeBarButtonsToAdd.0.click"],"jsHooks":{"render":[{"code":"function(el, x) { var ctConfig = crosstalk.var('plotlyCrosstalkOpts').set({\"on\":\"plotly_click\",\"persistent\":false,\"dynamic\":false,\"selectize\":false,\"opacityDim\":0.2,\"selected\":{\"opacity\":1}}); }","data":null}]}}</script>
+<p>So we select the top 3 variables, which helped to raise accuracy the most, as well as those which appear to have a positive effect on tpr. And of course we do not include the duration variable, which is unkown during prediction.</p>
+<pre class="r"><code>#select only non-damaging features for tpr
+dataset&lt;-dplyr::select(dataset, emp.var.rate, euribor3m, cons.conf.idx, pdays, nr.employed, cons.price.idx, month, default, V7, V3, V9, clusters, socio_eco, housing, y)</code></pre>
+<div id="a-final-transformation" class="section level4">
+<h4>A final transformation</h4>
+<p>So here we go creating dummy variables for the categorical variables.</p>
+<pre class="r"><code>#dummy variables
+
+dataset&lt;-dplyr::bind_cols(DataExplorer::dummify(dplyr::select(dataset, -y)), dplyr::select(dataset, y))</code></pre>
+</div>
+</div>
+<div id="modeling-evaluation" class="section level2">
+<h2>Modeling &amp; Evaluation</h2>
+<p>We need to define evaluation metrics relevant for the problem. Accuracy is an obvious one, but not sufficient, because we may also find it more important, that the algorithm spots as many true buyers as possible, because the telemarketeers labour costs do not outweight the potential gain from getting customers to subscribe to the term deposit (about a lot of money to make money with). So the true positive rate is interesting to monitor.</p>
+<p>I choose the simple setup of creating training, validation &amp; test datasets. We use the validation data to compare different learners with each other. The data is highly imbalanced (more no sayers than yes sayers), which is problematic for a lot of machine learning algorithms:</p>
+<p>We create training, validation and test datasets with a split of 80 % / 10 % / 10 %. To oversample the unbalanced training data, we apply the SMOTE algorithm.<br />
+The general principle behind SMOTE is to artificially create new data for the underrepresented class (actual bank deposit subscribers). For thisusing the k nearest neighbor algorithm is used to find new minority instances for the real instances, the artificial instances are then created as instances between the k nearest neighbors and the original real minority instance.</p>
+<pre class="r"><code># split up dataset for training, validation and testing
+
+#get record ids
+trainset_ids&lt;-sample(1:nrow(dataset), size = nrow(dataset)*0.8)
+all_ids&lt;-1:nrow(dataset)
+rest_ids&lt;-all_ids[(1:nrow(dataset)%in%trainset_ids==F)]
+validation_ids&lt;-sample(rest_ids, size = length(rest_ids)*(1/2))
+rest_ids&lt;-rest_ids[rest_ids%in%validation_ids==F]
+test_ids&lt;-sample(rest_ids, size = length(rest_ids))
+
+
+#split up the data
+training_data&lt;-dataset[trainset_ids,]
+validation_data&lt;-dataset[validation_ids,]
+testing_data&lt;-dataset[test_ids,]
+
+
+#smote the trainingdata
+
+
+times_to_oversample&lt;-nrow(training_data[training_data$y==&quot;no&quot;,])/nrow(training_data[training_data$y==&quot;yes&quot;,])
+library(SMOTE)  #this is a nice and very fast SMOTE implementation found here: https://github.com/drohner/SMOTE</code></pre>
+<pre><code>## Loading required package: Rcpp</code></pre>
+<pre class="r"><code>traindata_smote&lt;-smote.concatinated(training_data, col = ncol(training_data), char = &#39;yes&#39;, cores = 4, o = round(times_to_oversample))</code></pre>
+<pre><code>## The minority class got 3659 samples.
+## The oversamplingratio was 8 .
+## 29272 synthetic instances were generated.</code></pre>
+<pre class="r"><code>traindata_smote&lt;-rbind(traindata_smote, training_data)</code></pre>
+<div id="modeling" class="section level4">
+<h4>Modeling</h4>
+<p>Now to the modelling. We will train a support vector machine, random forest, xgboost, neural network, knn and do hyperparameter optimization. We do a grid search for less expensive models: random forest, decision tree, lightgbm/xgboost, support vector machine, neural network and knn (expensive during prediction).<br />
+For fun and to play with amazon aws a bit, we do this on an EC2 instance with 32 2.7GHz i7 cores and with rather unnecessary 60 GB RAM for 1.5 dollar per hour. This helps us to quickyl tune the hyperparameters in parallel.</p>
+<p>You can easily get an instance up and running and use it as like a remote desktop:</p>
+<div class="figure">
+<img src="data/parallel_tuning.png" alt="parallel_tuning" />
+<p class="caption">parallel_tuning</p>
+</div>
+<p>For hyperparameter tuining, we use model based hyperparameter optimization in most instances. A high level explanation of model based hyperparameter tuning goes like this:<br />
+- estimate a probabilistic or surrogate model mapping the hyperparameters to the objective function. The aim is to model P(score | hyperparameters)<br />
+- there are several ways of constructing the surrogate model, including training random forest regressors &amp; using the standard error of the trees for a given hyperparameter setting to it’s estimate uncertainty<br />
+- this surrogate model to estimate hyperparameters which are most promising (according to the surrogate model), i.e. by choosing settings which yield the highest expected improvement<br />
+- Use them on the real model<br />
+- Refit the surrogate model with the new results / scores<br />
+- Repeat for max ieterations or max time</p>
+<p>This is more efficient than ramdom search or grid search, because the hyperparameters are chosen in an informed or “smarter” way than blindly picking them from a grid or by random. Only the most promising hyperparameter settings are tried out in bayesian model optimization.</p>
+</div>
+<div id="model-benchmarking-model-selection" class="section level4">
+<h4>Model Benchmarking &amp; Model Selection</h4>
+<pre class="r"><code>#to reload the data in the aws instance, save the datasets
+
+# readr::write_tsv(traindata_smote, &quot;data/traindata_smote.csv&quot;)
+# readr::write_tsv(validation_data, &quot;data/validation_data.csv&quot;)
+# readr::write_tsv(testing_data, &quot;data/testing_data.csv&quot;)
+
+#reload whilst in the cloud
+
+traindata_smote&lt;-data.table::fread(&quot;data/traindata_smote.csv&quot;)
+validation_data&lt;-data.table::fread(&quot;data/validation_data.csv&quot;)
+testing_data&lt;-data.table::fread(&quot;data/testing_data.csv&quot;)</code></pre>
+<pre class="r"><code>library(mlrHyperopt)</code></pre>
+<pre><code>## Loading required package: ParamHelpers</code></pre>
+<pre><code>## Loading required package: mlr</code></pre>
+<pre><code>## 
+## Attaching package: &#39;mlr&#39;</code></pre>
+<pre><code>## The following objects are masked _by_ &#39;.GlobalEnv&#39;:
+## 
+##     f1, tpr</code></pre>
+<pre class="r"><code>library(mlr)
+library(parallelMap)
+
+#load all objects in this cell
+#workspace file is too large for gitlab upload
+
+load(&quot;/home/knut/Desktop/workspace2.RData&quot;)
+
+# task &lt;- makeClassifTask(id = &quot;telemarketing&quot;, data = as.data.frame(traindata_smote), target=&quot;y&quot;)
+# 
+# parallelStartMulticore(parallel::detectCores())
+# 
+# 
+# #download hyperparameter search spaces and make learners
+# 
+# searchspace_knn &lt;- downloadParConfigs(learner.name = &quot;kknn&quot;)
+# knn_opt &lt;- hyperopt(task, learner = &quot;classif.kknn&quot;, par.config = searchspace_knn[[1]])
+# 
+# 
+# nBayes &lt;- makeLearner(&quot;classif.naiveBayes&quot;)
+# nby&lt;-mlr::train(nBayes, task = task)
+# 
+# nnet_opt &lt;- hyperopt(task, learner = &quot;classif.nnet&quot;)
+# 
+# svm_opt &lt;- hyperopt(task, learner = &quot;classif.svm&quot;)
+# 
+# random_forest_opt &lt;- hyperopt(task, learner = &quot;classif.ranger&quot;)
+# 
+# #in an earlier run found these settings to be effective
+# random_forest_learner&lt;-makeLearner(cl = &quot;classif.ranger&quot;, id=&quot;randomf&quot;, num.trees = 128, mtry=22, min.node.size=10, num.threads=4)
+# 
+# random_forest_opt&lt;-train(makeLearner(cl = &quot;classif.ranger&quot;, id=&quot;randomf&quot;, num.trees = 128, mtry=22, min.node.size=10, num.threads=4), task)
+# 
+# 
+# 
+# 
+# #sample data for svm task which otherwise takes too long to train
+# 
+# sample_df&lt;-dplyr::sample_n(traindata_smote,10000)
+# svm_task &lt;- makeClassifTask(id = &quot;telemarketing&quot;, data = as.data.frame(sample_df), target=&quot;y&quot;)
+# 
+# svm_opt &lt;- hyperopt(svm_task, learner = &quot;classif.svm&quot;)
+# 
+# 
+# 
+# parallelStop()
+# 
+# 
+# #benchmarking
+# parallelStartMulticore(parallel::detectCores())
+# 
+# lrns &lt;-c(&quot;classif.kknn&quot;, &quot;classif.naiveBayes&quot;, &quot;classif.nnet&quot;, &quot;classif.svm&quot;, &quot;classif.ranger&quot;, &quot;classif.svm&quot;)
+# lrns &lt;- makeLearners(lrns)
+# 
+# lrns.tuned&lt;-list(nBayes, setHyperPars(lrns$classif.kknn, par.vals = knn_opt$x), setHyperPars(lrns$classif.nnet, par.vals = nnet_opt$x), setHyperPars(lrns$classif.svm, par.vals = svm_opt$x), random_forest_learner)
+# 
+# res = mlr::benchmark(learners = lrns.tuned, tasks = task, resamplings = cv10)
+# parallelStop()
+# plotBMRBoxplots(res) 
+# save.image(&quot;~/Desktop/workspace2.RData&quot;)
+# 
+# #train to check with validation set
+# cl&lt;-parallel::makeCluster(parallel::detectCores())
+# clusterEvalQ(cl, {library(mlrHyperopt); library(mlr)})
+# trained_learners&lt;-parallel::parLapply(cl, X=lrns.tuned, fun=train, task=task)
+# parallel::stopCluster(cl)
+# 
+# 
+# 
+# 
+# #xgboost training needs binary target
+# #so we need to create an extra task for it
+# traindata_smote_xgb&lt;-traindata_smote
+# 
+# traindata_smote_xgb$y2&lt;-as.numeric(as.factor(traindata_smote_xgb$y))
+# traindata_smote_xgb[traindata_smote_xgb$y2&lt;2,&quot;y2&quot;]&lt;-F
+# traindata_smote_xgb[traindata_smote_xgb$y2==2,&quot;y2&quot;]&lt;-T
+# 
+# 
+# traindata_smote_xgb$y2&lt;-as.numeric(traindata_smote_xgb$y2)
+# traindata_smote_xgb$y&lt;-as.numeric(traindata_smote_xgb$y2)
+# traindata_smote_xgb&lt;-dplyr::select(traindata_smote_xgb, -y2)
+# 
+# traindata_smote_xgb$y&lt;-as.logical(traindata_smote_xgb$y)
+# 
+# xgb_task &lt;- makeClassifTask(id = &quot;telemarketing&quot;, data = as.data.frame(traindata_smote_xgb), target=&quot;y&quot;)
+# 
+# autoxgboost_opt&lt;-autoxgboost::autoxgboost(task = xgb_task)
+# 
+# library(BBmisc)
+# xgb_benchmark = mlr::benchmark(learners = autoxgboost_opt$final.model$learner, tasks = xgb_task, resamplings = cv10)
+# 
+# xgboost_trained&lt;-autoxgboost_opt$final.model$learner.model
+
+
+#let&#39;s take a look at the benchmark data
+
+crossvalidation_benchmark_results&lt;-dplyr::bind_rows(as.data.frame(res), as.data.frame(xgb_benchmark))</code></pre>
+<pre><code>## Warning in bind_rows_(x, .id): Unequal factor levels: coercing to character</code></pre>
+<pre><code>## Warning in bind_rows_(x, .id): binding character and factor vector,
+## coercing into character vector
+
+## Warning in bind_rows_(x, .id): binding character and factor vector,
+## coercing into character vector</code></pre>
+<pre class="r"><code>crossvalidation_benchmark_results$mmce&lt;-1-crossvalidation_benchmark_results$mmce
+
+crossvalidation_benchmark_results&lt;-tidyr::separate(crossvalidation_benchmark_results, learner.id, into=c(&quot;class&quot;, &quot;learner.id&quot;, &quot;rest&quot;), sep=&quot;[.]&quot;, extra=&quot;warn&quot;)</code></pre>
+<pre><code>## Warning: Expected 3 pieces. Additional pieces discarded in 10 rows [51, 52,
+## 53, 54, 55, 56, 57, 58, 59, 60].</code></pre>
+<pre><code>## Warning: Expected 3 pieces. Missing pieces filled with `NA` in 50 rows [1,
+## 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, ...].</code></pre>
+<pre class="r"><code>crossvalidation_benchmark_results[crossvalidation_benchmark_results$class==&quot;randomf&quot;, &quot;learner.id&quot;]&lt;-&quot;randomForest&quot;
+
+ggplot(crossvalidation_benchmark_results, aes(y=mmce, x=as.factor(learner.id))) + geom_boxplot(stat=&quot;boxplot&quot;, position=&quot;dodge&quot;, alpha=1, width=0.2) + theme_bw() + theme(text=element_text(family=&quot;Times&quot;, face=&quot;plain&quot;, color=&quot;#000000&quot;, size=15, hjust=0.5, vjust=0.5)) + ggtitle(&quot;Accurcy for 10-fold crossvalidation&quot;) + xlab(&quot;Algorithm&quot;) + ylab(&quot;Accuracy&quot;)</code></pre>
+<p><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-44-1.png" width="672" /></p>
+<p>We can see that the random forest and k-nearest neighbor show very high accuracy in the upsampled, cross-validated training data. For a more reliable estimate of actual accuracy and other metrics, we apply the algorithms to the validation set as well, so we can make an unbiased selection of a suitable algorithm.</p>
+<pre class="r"><code>library(mlr)
+library(e1071)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;e1071&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:mlr&#39;:
+## 
+##     impute</code></pre>
+<pre class="r"><code>library(nnet)
+
+get_evaluation_data&lt;-function(dataset=validation_data){
+  predictions&lt;-list()
+for (i in 1:5){
+  predict&lt;-predictLearner(.learner=lrns.tuned[[i]], .model=trained_learners[[i]], .newdata=dataset)
+  predictions&lt;-rlist::list.append(predictions, predict)
+  
+}
+
+
+library(xgboost)
+library(autoxgboost)
+xgb_task_check &lt;- makeClassifTask(id = &quot;telemarketing&quot;, data = as.data.frame(dataset), target = &quot;y&quot;)
+
+predictions_xgb&lt;-as.data.frame(predict(autoxgboost_opt, as.data.frame(dplyr::select(dataset, -y))))
+
+#turn class probabilities to label predictions
+predictions_xgb$labels&lt;-&quot;yes&quot;
+predictions_xgb[predictions_xgb$`0`&gt;predictions_xgb$`1`,&quot;labels&quot;]&lt;-&quot;no&quot;
+
+
+#helper data frame to check several metrics
+
+names(predictions)&lt;-unique(crossvalidation_benchmark_results$learner.id)[1:5]
+
+predictions&lt;-lapply(predictions, as.character)
+
+metrics_df&lt;-as.data.frame(cbind(rlist::list.cbind((predictions)), xgboost=predictions_xgb$labels))
+
+metrics_df&lt;-cbind(tidyr::gather(data = metrics_df, key=&quot;key&quot;, value=&quot;value&quot;, naiveBayes:xgboost), actual=rep(dataset$y, ncol(metrics_df)))
+
+
+metrics_df$value_binary&lt;-as.character(metrics_df$value)
+metrics_df$value_binary[metrics_df$value_binary==&quot;yes&quot;]&lt;-1
+metrics_df$value_binary[metrics_df$value_binary==&quot;no&quot;]&lt;-0
+metrics_df$value_binary&lt;-as.numeric(metrics_df$value_binary)
+
+
+metrics_df$actual_binary&lt;-as.character(metrics_df$actual)
+metrics_df$actual_binary[metrics_df$actual_binary==&quot;yes&quot;]&lt;-1
+metrics_df$actual_binary[metrics_df$actual_binary==&quot;no&quot;]&lt;-0
+metrics_df$actual_binary&lt;-as.numeric(metrics_df$actual_binary)
+
+
+
+library(Metrics)
+library(EvaluationMeasures)
+
+
+metrics_df&lt;-metrics_df%&gt;%dplyr::group_by(key)%&gt;%dplyr::summarise(accuracy=accuracy(actual = actual, predicted = value), F1=EvaluationMeasures.F1Score(actual_binary, value_binary), TPR=EvaluationMeasures.TPR(actual_binary, value_binary), Precision=EvaluationMeasures.Precision(actual_binary, value_binary))
+
+return(metrics_df)
+
+}
+
+validation_data_metrics&lt;-get_evaluation_data()</code></pre>
+<pre><code>## Warning in data.matrix(newdata): NAs introduced by coercion</code></pre>
+<pre><code>## Loading required package: mlrMBO</code></pre>
+<pre><code>## Loading required package: smoof</code></pre>
+<pre><code>## Loading required package: BBmisc</code></pre>
+<pre><code>## 
+## Attaching package: &#39;BBmisc&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:grid&#39;:
+## 
+##     explode</code></pre>
+<pre><code>## The following object is masked from &#39;package:base&#39;:
+## 
+##     isFALSE</code></pre>
+<pre><code>## Loading required package: checkmate</code></pre>
+<pre><code>## Loading required package: mlrCPO</code></pre>
+<pre><code>## Warning: attributes are not identical across measure variables;
+## they will be dropped</code></pre>
+<pre class="r"><code>plotluck::plotluck(validation_data_metrics, key~., opts = plotluck::plotluck.options(multi.in.grid=F))</code></pre>
+<pre><code>## Factor variable key has too many levels (6), truncating to 2</code></pre>
+<p><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-45-1.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-45-2.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-45-3.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-45-4.png" width="672" /><img src="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking_files/figure-html/unnamed-chunk-45-5.png" width="672" /></p>
+<p>We can see that althought the accuracy is the highest for the random forest, results are more balanced for the neural network. Especially the true positive rate, which is important from a business standpoint (we we want as much good prospects to be called and convert into profitable sold term deposits), is better for the neural network than for most other algorithms. Xgboost on the otherhand is too much biased towards finding potential customers and thus has low precision and low F1 scores. It does not help if the algorithm simply predicts to call everybody. So our choice is for the overall well balanced neural network having descend accuracy as well.</p>
+<p>Now that we have decided upon the model, we apply it to the test data to get an unbiased estimate of it’s performance.</p>
+</div>
+<div id="evaluation" class="section level4">
+<h4>Evaluation</h4>
+<pre class="r"><code>testset_metrics&lt;-get_evaluation_data(dataset = testing_data)</code></pre>
+<pre><code>## Warning in data.matrix(newdata): NAs introduced by coercion</code></pre>
+<pre><code>## Warning: attributes are not identical across measure variables;
+## they will be dropped</code></pre>
+<pre class="r"><code>htmlTable(t(testset_metrics[testset_metrics$key==&quot;nnet&quot;,]))</code></pre>
+<table class="gmisc_table" style="border-collapse: collapse; margin-top: 1em; margin-bottom: 1em;">
+<tbody>
+<tr style="border-top: 2px solid grey;">
+<td style="border-top: 2px solid grey; text-align: left;">
+key
+</td>
+<td style="border-top: 2px solid grey; text-align: center;">
+nnet
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+accuracy
+</td>
+<td style="text-align: center;">
+0.8095006
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+F1
+</td>
+<td style="text-align: center;">
+0.3985
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+TPR
+</td>
+<td style="text-align: center;">
+0.6108
+</td>
+</tr>
+<tr>
+<td style="border-bottom: 2px solid grey; text-align: left;">
+Precision
+</td>
+<td style="border-bottom: 2px solid grey; text-align: center;">
+0.2957
+</td>
+</tr>
+</tbody>
+</table>
+<p>No surprises here. So we can report that our model has an accuracy of 81 % and identifies 61 % of all potential subscribers, although in the actual dataset, these make only a very small percentage of our customers. This model can help to identify a lot of correct targets for the telemarketing campaign. Fun exercise!</p>
+<p>The content of this page is licensed under the Creative Commons Attribution 3.0 License.</p>
+</div>
+</div>
+</div>
+
+              
+            </div>
+          </div>
+          <div id="post-footer" class="post-footer main-content-wrap">
+            
+              
+                
+                
+                  <div class="post-footer-tags">
+                    <span class="text-color-light text-small"></span><br/>
+                    
+  <a class="tag tag--primary tag--small" href="/tags/toydataset/">Toydataset</a>
+
+                  </div>
+                
+              
+            
+            
+  <div class="post-actions-wrap">
+      <nav >
+        <ul class="post-actions post-action-nav">
+          
+            <li class="post-action">
+              
+                <a class="post-action-btn btn btn--disabled">
+              
+                  <i class="fa fa-angle-left"></i>
+                  <span class="hide-xs hide-sm text-small icon-ml"></span>
+                </a>
+            </li>
+            <li class="post-action">
+              
+                <a class="post-action-btn btn btn--disabled">
+              
+                  <span class="hide-xs hide-sm text-small icon-mr"></span>
+                  <i class="fa fa-angle-right"></i>
+                </a>
+            </li>
+          
+        </ul>
+      </nav>
+    <ul class="post-actions post-action-share" >
+      
+        <li class="post-action hide-lg hide-md hide-sm">
+          <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions">
+            <i class="fa fa-share-alt"></i>
+          </a>
+        </li>
+        
+      
+      
+      <li class="post-action">
+        
+          <a class="post-action-btn btn btn--default" href="#">
+        
+          <i class="fa fa-list"></i>
+        </a>
+      </li>
+    </ul>
+  </div>
+
+
+            
+              
+            
+          </div>
+        </article>
+        <footer id="footer" class="main-content-wrap">
+  <span class="copyrights">
+    &copy; 2018 My New Hugo Site. 
+  </span>
+</footer>
+
+      </div>
+      <div id="bottom-bar" class="post-bottom-bar" data-behavior="">
+        
+  <div class="post-actions-wrap">
+      <nav >
+        <ul class="post-actions post-action-nav">
+          
+            <li class="post-action">
+              
+                <a class="post-action-btn btn btn--disabled">
+              
+                  <i class="fa fa-angle-left"></i>
+                  <span class="hide-xs hide-sm text-small icon-ml"></span>
+                </a>
+            </li>
+            <li class="post-action">
+              
+                <a class="post-action-btn btn btn--disabled">
+              
+                  <span class="hide-xs hide-sm text-small icon-mr"></span>
+                  <i class="fa fa-angle-right"></i>
+                </a>
+            </li>
+          
+        </ul>
+      </nav>
+    <ul class="post-actions post-action-share" >
+      
+        <li class="post-action hide-lg hide-md hide-sm">
+          <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions">
+            <i class="fa fa-share-alt"></i>
+          </a>
+        </li>
+        
+      
+      
+      <li class="post-action">
+        
+          <a class="post-action-btn btn btn--default" href="#">
+        
+          <i class="fa fa-list"></i>
+        </a>
+      </li>
+    </ul>
+  </div>
+
+
+      </div>
+      <div id="share-options-bar" class="share-options-bar" data-behavior="">
+  <i id="btn-close-shareoptions" class="fa fa-close"></i>
+  <ul class="share-options">
+    
+  </ul>
+</div>
+<div id="share-options-mask" class="share-options-mask"></div>
+    </div>
+    
+    <div id="about">
+  <div id="about-card">
+    <div id="about-btn-close">
+      <i class="fa fa-remove"></i>
+    </div>
+    
+    <h4 id="about-card-name"></h4>
+    
+    
+    
+  </div>
+</div>
+
+    <div id="algolia-search-modal" class="modal-container">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="close-button"><i class="fa fa-close"></i></span>
+      <a href="https://algolia.com" target="_blank" rel="noopener" class="searchby-algolia text-color-light link-unstyled">
+        <span class="searchby-algolia-text text-color-light text-small">by</span>
+        <img class="searchby-algolia-logo" src="https://www.algolia.com/static_assets/images/press/downloads/algolia-light.svg">
+      </a>
+      <i class="search-icon fa fa-search"></i>
+      <form id="algolia-search-form">
+        <input type="text" id="algolia-search-input" name="search"
+          class="form-control input--large search-input" placeholder="" />
+      </form>
+    </div>
+    <div class="modal-body">
+      <div class="no-result text-color-light text-center"></div>
+      <div class="results">
+        
+        
+          <div class="media">
+            
+            <div class="media-body">
+              <a class="link-unstyled" href="/post/2018-08-11-using-customer-identity-embeddings-customer2vec-to-predict-telemarketing-success-in-banking/">
+                <h3 class="media-heading">Using Customer Identity Embeddings (Customer2Vec) to predict Telemarketing success in Banking</h3>
+              </a>
+              <span class="media-meta">
+                <span class="media-date text-small">
+                  Aug 8, 2018
+                </span>
+              </span>
+              <div class="media-content hide-xs font-merryweather">Customer2vec
+ The why  You’re curious about customer2vec
+ You’re new to data science and would like to to see one of the many possible work flows in R You’re just as curious as I am about fiddling around with R blogdown for data driven storytelling For me this is a nice toy dataset to play with  The purpose of this post is mainly to exercise a bit of data mining, using the reknown case about predicting effectiveness of a direct marketing intervention of a bank from the UCI ML repository (find it here: https://archive.</div>
+            </div>
+            <div style="clear:both;"></div>
+            <hr>
+          </div>
+        
+      </div>
+    </div>
+    <div class="modal-footer">
+      <p class="results-count text-medium"
+         data-message-zero=""
+         data-message-one=""
+         data-message-other="">
+         1 posts found
+      </p>
+    </div>
+  </div>
+</div>
+    
+
+    
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.4/jquery.min.js" integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44=" crossorigin="anonymous"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.7/js/jquery.fancybox.min.js" integrity="sha256-GEAnjcTqVP+vBp3SSc8bEDQqvWAZMiHyUSIorrWwH50=" crossorigin="anonymous"></script>
+
+
+<script src="/js/script-qi9wbxp2ya2j6p7wx1i6tgavftewndznf4v0hy2gvivk1rxgc3lm7njqb6bz.min.js"></script>
+
+
+
+
+  
+    
+  
+
+
+
+    
+  </body>
+</html>
+
